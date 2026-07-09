@@ -52,3 +52,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - UE5 C++ Third Person 기반 프로젝트를 생성했습니다.
 - 멀티플레이 액션 RPG 샘플의 1차 목표와 제외 범위를 정리했습니다.
 - 초기 단계에서는 전투 구현보다 서버/클라이언트 실행 환경과 네트워크 디버그 표시를 우선 구현하기로 했습니다.
+
+### Week 1 Day 2 - PIE Multiplayer Test
+
+- Unreal Editor의 Play In Editor 멀티플레이 옵션을 확인했습니다.
+- Number of Players를 2로 설정하고 Listen Server 모드에서 두 플레이어가 같은 맵에 접속하는 것을 확인했습니다.
+- Play As Client 모드에서 백그라운드 서버와 2개의 클라이언트 창이 실행되는 흐름을 확인했습니다.
+- Listen Server는 서버 역할을 겸하는 플레이어 창이 존재하고, Play As Client는 Dedicated Server에 가까운 구조로 클라이언트 창만 표시된다는 차이를 정리했습니다.
+- 이후 네트워크 디버그 UI에서 NetMode / LocalRole / RemoteRole을 표시하기로 했습니다.
