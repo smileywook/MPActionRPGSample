@@ -75,3 +75,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - Listen Server와 Play As Client 실행 모드에서 서버와 클라이언트의 Role 차이를 확인했습니다.
 - 서버 월드에서는 복제 Actor가 Authority를 가지며, 클라이언트 월드에서는 로컬 플레이어 Pawn이 AutonomousProxy, 다른 플레이어 Pawn이 SimulatedProxy로 동작하는 것을 확인했습니다.
 - 이후 전투 판정과 HP 변경은 HasAuthority 기준으로 서버에서만 처리하도록 설계할 예정입니다.
+
+### Week 1 Day 5 - Network Debug Widget
+
+- 네트워크 상태를 화면에서 확인하기 위한 WBP_NetworkDebug 위젯을 생성했습니다.
+- MPPlayerController에서 로컬 컨트롤러일 때만 Debug Widget을 생성하고 Viewport에 추가하도록 구현했습니다.
+- 위젯에는 NetMode, LocalRole, RemoteRole, HasAuthority, IsLocallyControlled, Pawn Name을 표시했습니다.
+- Listen Server와 Play As Client 실행 모드에서 각 클라이언트 창의 Role 차이를 화면에서 확인했습니다.
+- C++는 기본 로직을 담당하고, Blueprint는 Widget Class와 에셋 참조 설정을 담당하도록 분리했습니다.
