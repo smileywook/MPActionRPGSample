@@ -13,6 +13,13 @@ UCLASS()
 class MPACTIONRPGSAMPLE_API AMPPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> NetworkDebugWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> NetworkDebugWidget;
 	
 protected:
 	virtual void BeginPlay() override;

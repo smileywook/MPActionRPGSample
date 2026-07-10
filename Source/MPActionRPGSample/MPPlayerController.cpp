@@ -2,6 +2,7 @@
 
 
 #include "MPPlayerController.h"
+#include "Blueprint/UserWidget.h"
 
 namespace
 {
@@ -51,4 +52,14 @@ void AMPPlayerController::BeginPlay()
 		*RoleToString(GetRemoteRole()),
 		HasAuthority() ? TEXT("true") : TEXT("false"),
 		IsLocalController() ? TEXT("true") : TEXT("false"));
+
+	if (IsLocalController() && NetworkDebugWidgetClass)
+	{
+		NetworkDebugWidget = CreateWidget<UUserWidget>(this, NetworkDebugWidgetClass);
+
+		if (NetworkDebugWidget)
+		{
+			NetworkDebugWidget->AddToViewport(999);
+		}
+	}
 }
