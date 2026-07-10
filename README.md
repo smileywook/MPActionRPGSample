@@ -60,3 +60,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - Play As Client 모드에서 백그라운드 서버와 2개의 클라이언트 창이 실행되는 흐름을 확인했습니다.
 - Listen Server는 서버 역할을 겸하는 플레이어 창이 존재하고, Play As Client는 Dedicated Server에 가까운 구조로 클라이언트 창만 표시된다는 차이를 정리했습니다.
 - 이후 네트워크 디버그 UI에서 NetMode / LocalRole / RemoteRole을 표시하기로 했습니다.
+
+### Week 1 Day 3 - Gameplay Framework Base Classes
+
+- 멀티플레이 샘플에서 사용할 기본 Gameplay Framework 클래스를 생성했습니다.
+- MPGameMode, MPGameState, MPPlayerState, MPPlayerController를 추가했습니다.
+- MPGameMode에서 GameStateClass, PlayerControllerClass, PlayerStateClass, DefaultPawnClass를 명시적으로 지정했습니다.
+- GameMode는 서버 전용 게임 규칙, GameState는 전체 게임 상태, PlayerState는 플레이어별 상태, PlayerController는 입력과 UI 소유 역할로 분리하기로 했습니다.
+- PIE 멀티플레이 실행에서 기존 Third Person Character가 정상적으로 스폰되고 이동 동기화되는 것을 확인했습니다.
