@@ -11,6 +11,43 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+namespace
+{
+	FString NetModeToString(ENetMode NetMode)
+	{
+		switch (NetMode)
+		{
+		case NM_Standalone:
+			return TEXT("Standalone");
+		case NM_DedicatedServer:
+			return TEXT("DedicatedServer");
+		case NM_ListenServer:
+			return TEXT("ListenServer");
+		case NM_Client:
+			return TEXT("Client");
+		default:
+			return TEXT("Unknown");
+		}
+	}
+
+	FString RoleToString(ENetRole Role)
+	{
+		switch (Role)
+		{
+		case ROLE_None:
+			return TEXT("None");
+		case ROLE_SimulatedProxy:
+			return TEXT("SimulatedProxy");
+		case ROLE_AutonomousProxy:
+			return TEXT("AutonomousProxy");
+		case ROLE_Authority:
+			return TEXT("Authority");
+		default:
+			return TEXT("Unknown");
+		}
+	}
+}
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,6 +89,19 @@ AMPActionRPGSampleCharacter::AMPActionRPGSampleCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+void AMPActionRPGSampleCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Warning, TEXT("[Character BeginPlay] Name=%s | NetMode=%s | LocalRole=%s | RemoteRole=%s | HasAuthority=%s | IsLocallyControlled=%s"),
+		*GetName(),
+		*NetModeToString(GetNetMode()),
+		*RoleToString(GetLocalRole()),
+		*RoleToString(GetRemoteRole()),
+		HasAuthority() ? TEXT("true") : TEXT("false"),
+		IsLocallyControlled() ? TEXT("true") : TEXT("false"));
 }
 
 //////////////////////////////////////////////////////////////////////////

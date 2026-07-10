@@ -46,6 +46,8 @@ class AMPActionRPGSampleCharacter : public ACharacter
 
 public:
 	AMPActionRPGSampleCharacter();
+
+	virtual void BeginPlay() override;
 	
 
 protected:

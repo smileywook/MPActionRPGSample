@@ -68,3 +68,10 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - MPGameMode에서 GameStateClass, PlayerControllerClass, PlayerStateClass, DefaultPawnClass를 명시적으로 지정했습니다.
 - GameMode는 서버 전용 게임 규칙, GameState는 전체 게임 상태, PlayerState는 플레이어별 상태, PlayerController는 입력과 UI 소유 역할로 분리하기로 했습니다.
 - PIE 멀티플레이 실행에서 기존 Third Person Character가 정상적으로 스폰되고 이동 동기화되는 것을 확인했습니다.
+
+### Week 1 Day 4 - Network Role Logging
+
+- Character와 PlayerController의 BeginPlay에서 NetMode / LocalRole / RemoteRole / HasAuthority / IsLocallyControlled 상태를 로그로 출력했습니다.
+- Listen Server와 Play As Client 실행 모드에서 서버와 클라이언트의 Role 차이를 확인했습니다.
+- 서버 월드에서는 복제 Actor가 Authority를 가지며, 클라이언트 월드에서는 로컬 플레이어 Pawn이 AutonomousProxy, 다른 플레이어 Pawn이 SimulatedProxy로 동작하는 것을 확인했습니다.
+- 이후 전투 판정과 HP 변경은 HasAuthority 기준으로 서버에서만 처리하도록 설계할 예정입니다.
