@@ -6,6 +6,9 @@
 #include "GameFramework/PlayerController.h"
 #include "MPPlayerController.generated.h"
 
+class AMPPlayerState;
+class UUserWidget;
+
 /**
  * 
  */
@@ -20,7 +23,18 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UUserWidget> NetworkDebugWidget;
+
+private:
+	UPROPERTY()
+	TObjectPtr<AMPPlayerState> CachedMPPlayerState;
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnRep_PlayerState() override;
+
+private:
+	void TryBindPlayerStateEvents();
+
+	UFUNCTION()
+	void HandlePlayerDisplayNameChanged(const FString& NewDisplayName);
 };

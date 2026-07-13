@@ -49,4 +49,6 @@ void AMPPlayerState::HandlePlayerDisplayNameChanged()
 		static_cast<int32>(GetNetMode()),
 		static_cast<int32>(GetLocalRole()),
 		HasAuthority() ? TEXT("true") : TEXT("false"));
+
+	OnPlayerDisplayNameChanged.Broadcast(PlayerDisplayName);
 }

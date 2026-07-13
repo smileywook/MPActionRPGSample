@@ -107,3 +107,12 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - WBP_NetworkDebug에서 Get Game State → Cast To MPGameState 흐름으로 GameState에 접근하고, 접속자 목록을 화면에 표시했습니다.
 - Listen Server와 Play As Client 실행 모드에서 모든 클라이언트가 동일한 접속자 목록을 확인할 수 있음을 검증했습니다.
 - GameState는 게임 전체 공유 상태, PlayerState는 플레이어별 상태를 담당한다는 기준을 정리했습니다.
+
+### Week 2 Day 4 - PlayerState Change Event Pattern
+
+- MPPlayerState에 PlayerDisplayName 변경을 알리는 OnPlayerDisplayNameChanged Delegate를 추가했습니다.
+- SetPlayerDisplayName과 OnRep_PlayerDisplayName에서 공통 HandlePlayerDisplayNameChanged 함수를 호출하도록 정리했습니다.
+- HandlePlayerDisplayNameChanged에서 로그 출력과 Delegate Broadcast를 함께 처리하도록 구성했습니다.
+- MPPlayerController에서 로컬 PlayerState의 OnPlayerDisplayNameChanged 이벤트를 구독하고, 이벤트 수신 로그를 확인했습니다.
+- PlayerState가 BeginPlay 시점에 아직 준비되지 않을 수 있으므로 BeginPlay와 OnRep_PlayerState 양쪽에서 바인딩을 시도하도록 처리했습니다.
+- 이후 HP / Gold / Skill Cooldown UI도 OnRep → Handle → Delegate → UI 갱신 패턴으로 확장할 예정입니다.

@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerState.h"
 #include "MPPlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerDisplayNameChanged, const FString&, NewDisplayName);
+
 /**
  * 
  */
@@ -13,6 +15,10 @@ UCLASS()
 class MPACTIONRPGSAMPLE_API AMPPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintAssignable, Category = "MP|PlayerState|Events")
+	FOnPlayerDisplayNameChanged OnPlayerDisplayNameChanged;
 
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_PlayerDisplayName)
