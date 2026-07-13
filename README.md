@@ -91,3 +91,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - MPGameMode::PostLogin에서 서버가 접속한 플레이어의 표시 이름을 설정하도록 구현했습니다.
 - 서버에서 변경한 PlayerDisplayName이 클라이언트로 복제되고, 클라이언트에서 OnRep_PlayerDisplayName이 호출되는 흐름을 로그로 확인했습니다.
 - 플레이어별 네트워크 상태는 Character가 아니라 PlayerState에 두는 것이 적절하다는 기준을 정리했습니다.
+
+### Week 2 Day 2 - Display PlayerState on Debug UI
+
+- WBP_NetworkDebug에 PlayerDisplayName 표시 항목을 추가했습니다.
+- MPPlayerState의 GetPlayerDisplayName 함수를 BlueprintPure로 노출했습니다.
+- Debug Widget에서 Owning Player의 PlayerState를 가져와 MPPlayerState로 Cast한 뒤, 복제된 PlayerDisplayName을 화면에 표시했습니다.
+- Listen Server와 Play As Client 실행 모드에서 각 클라이언트 화면에 서버에서 설정한 PlayerDisplayName이 표시되는 것을 확인했습니다.
+- 플레이어별 장기 상태는 PlayerState에 두고, UI는 Replicated PlayerState를 읽어 표시하는 흐름을 확인했습니다.

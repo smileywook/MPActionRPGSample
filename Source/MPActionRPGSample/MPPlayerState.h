@@ -23,6 +23,7 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION(BlueprintPure, Category = "MP|PlayerState")
 	const FString& GetPlayerDisplayName() const { return PlayerDisplayName; }
 
 	void SetPlayerDisplayName(const FString& NewDisplayName);
