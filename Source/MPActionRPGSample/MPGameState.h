@@ -14,7 +14,11 @@ class MPACTIONRPGSAMPLE_API AMPGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 
+public:
+	UFUNCTION(BlueprintPure, Category = "MP|GameState")
+	FText GetPlayerListText() const;
 
-
+	UFUNCTION(BlueprintPure, Category = "MP|GameState")
+	int32 GetConnectedPlayerCount() const;
 	
 };

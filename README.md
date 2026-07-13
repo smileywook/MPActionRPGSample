@@ -99,3 +99,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - Debug Widget에서 Owning Player의 PlayerState를 가져와 MPPlayerState로 Cast한 뒤, 복제된 PlayerDisplayName을 화면에 표시했습니다.
 - Listen Server와 Play As Client 실행 모드에서 각 클라이언트 화면에 서버에서 설정한 PlayerDisplayName이 표시되는 것을 확인했습니다.
 - 플레이어별 장기 상태는 PlayerState에 두고, UI는 Replicated PlayerState를 읽어 표시하는 흐름을 확인했습니다.
+
+### Week 2 Day 3 - GameState PlayerArray and Player List UI
+
+- MPGameState에서 GameState의 PlayerArray를 순회해 접속 중인 PlayerState 목록을 Debug UI에 표시하도록 구현했습니다.
+- MPGameState에 GetPlayerListText와 GetConnectedPlayerCount 함수를 BlueprintPure로 노출했습니다.
+- WBP_NetworkDebug에서 Get Game State → Cast To MPGameState 흐름으로 GameState에 접근하고, 접속자 목록을 화면에 표시했습니다.
+- Listen Server와 Play As Client 실행 모드에서 모든 클라이언트가 동일한 접속자 목록을 확인할 수 있음을 검증했습니다.
+- GameState는 게임 전체 공유 상태, PlayerState는 플레이어별 상태를 담당한다는 기준을 정리했습니다.
