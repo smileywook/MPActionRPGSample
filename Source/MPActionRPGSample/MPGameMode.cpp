@@ -22,3 +22,31 @@ AMPGameMode::AMPGameMode()
 		//DefaultPawnClass = AMPActionRPGSampleCharacter::StaticClass();
 	}
 }
+
+void AMPGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	if (!NewPlayer)
+	{
+		return;
+	}
+
+	AMPPlayerState* MPPlayerState = NewPlayer->GetPlayerState<AMPPlayerState>();
+	if (!MPPlayerState)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[GameMode] PostLogin failed. PlayerState is invalid. Controller=%s"), *NewPlayer->GetName());
+
+		return;
+	}
+
+	const int32 PlayerId = MPPlayerState->GetPlayerId();
+	const FString NewDisplayName = FString::Printf(TEXT("Player_%d"), PlayerId);
+
+	MPPlayerState->SetPlayerDisplayName(NewDisplayName);
+
+	UE_LOG(LogTemp, Warning, TEXT("[GameMode] PostLogin. Controller=%s | PlayerState=%s | DisplayName=%s"),
+		*NewPlayer->GetName(),
+		*MPPlayerState->GetName(),
+		*NewDisplayName);
+}

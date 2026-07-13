@@ -13,5 +13,25 @@ UCLASS()
 class MPACTIONRPGSAMPLE_API AMPPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+private:
+	UPROPERTY(ReplicatedUsing = OnRep_PlayerDisplayName)
+	FString PlayerDisplayName;
+
+public:
+	AMPPlayerState();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	const FString& GetPlayerDisplayName() const { return PlayerDisplayName; }
+
+	void SetPlayerDisplayName(const FString& NewDisplayName);
+
+protected:
+	UFUNCTION()
+	void OnRep_PlayerDisplayName();
+
+private:
+	void HandlePlayerDisplayNameChanged();
 	
 };

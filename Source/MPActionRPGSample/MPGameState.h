@@ -13,5 +13,8 @@ UCLASS()
 class MPACTIONRPGSAMPLE_API AMPGameState : public AGameStateBase
 {
 	GENERATED_BODY()
+
+
+
 	
 };

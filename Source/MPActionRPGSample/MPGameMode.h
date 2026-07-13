@@ -16,4 +16,6 @@ class MPACTIONRPGSAMPLE_API AMPGameMode : public AGameModeBase
 	
 public:
 	AMPGameMode();
+
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 };

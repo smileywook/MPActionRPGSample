@@ -83,3 +83,11 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - 위젯에는 NetMode, LocalRole, RemoteRole, HasAuthority, IsLocallyControlled, Pawn Name을 표시했습니다.
 - Listen Server와 Play As Client 실행 모드에서 각 클라이언트 창의 Role 차이를 화면에서 확인했습니다.
 - C++는 기본 로직을 담당하고, Blueprint는 Widget Class와 에셋 참조 설정을 담당하도록 분리했습니다.
+
+### Week 2 Day 1 - PlayerState Replication Basics
+
+- MPPlayerState에 PlayerDisplayName을 추가하고 ReplicatedUsing 방식으로 복제되도록 구현했습니다.
+- GetLifetimeReplicatedProps에서 PlayerDisplayName을 DOREPLIFETIME으로 등록했습니다.
+- MPGameMode::PostLogin에서 서버가 접속한 플레이어의 표시 이름을 설정하도록 구현했습니다.
+- 서버에서 변경한 PlayerDisplayName이 클라이언트로 복제되고, 클라이언트에서 OnRep_PlayerDisplayName이 호출되는 흐름을 로그로 확인했습니다.
+- 플레이어별 네트워크 상태는 Character가 아니라 PlayerState에 두는 것이 적절하다는 기준을 정리했습니다.
