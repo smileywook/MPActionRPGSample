@@ -41,6 +41,8 @@ public:
 protected:
 	UFUNCTION()
 	void HandleHealthChanged(float CurrentHP, float MaxHP);
+	UFUNCTION()
+	void HandleDeath();
 
 	UFUNCTION(Server, Reliable)
 	void ServerRequestApplyTestDamage(float DamageAmount);
@@ -66,7 +68,9 @@ private:
 	void TryBindHealthComponent();
 	void UnbindHealthComponent();
 
-	void ApplyDamageToControlledPawn(float DamageAmount);
-	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
+	void ApplyDamageToControlledPawn(float DamageAmount);	
 	void HealControlledPawn(float HealAmount);
+
+	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
+	void UpdateDeathDebugUI(bool bDead);
 };

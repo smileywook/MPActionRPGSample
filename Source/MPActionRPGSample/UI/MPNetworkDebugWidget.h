@@ -22,9 +22,12 @@ protected:
     TObjectPtr<UTextBlock> HealthText;
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UProgressBar> HealthBar;
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> DeathText;
 
 public:
     void SetHealth(float CurrentHP, float MaxHP);
+    void SetDead(bool bDead);
 
 protected:
     virtual void NativeConstruct() override;

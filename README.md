@@ -278,3 +278,17 @@ HandleChanged
 - HealControlledPawn 함수를 추가하여 현재 Pawn의 UMPHealthComponent에 Heal 요청을 전달하도록 구현했습니다.
 - TestDamage와 TestHeal을 함께 사용하여 HP 감소와 회복이 모두 Replication과 OnRep_CurrentHP를 거쳐 UI에 반영되는 것을 확인할 예정입니다.
 
+### Week 3 Day 5 - Add Death State and Death Event Flow
+
+- UMPHealthComponent에 bIsDead 상태 값을 추가했습니다.
+- bIsDead에 ReplicatedUsing=OnRep_IsDead를 적용하고 DOREPLIFETIME에 등록했습니다.
+- HP가 0이 되었을 때 HandleDeath를 호출하여 사망 상태로 전환하도록 구성했습니다.
+- OnDeath Delegate를 추가하여 사망 이벤트를 외부로 알릴 수 있도록 구성했습니다.
+- 서버에서는 HandleDeath에서 OnDeath를 Broadcast하고, 클라이언트에서는 OnRep_IsDead에서 OnDeath를 Broadcast하도록 정리했습니다.
+- 이미 사망한 상태에서는 ApplyDamage와 Heal이 더 이상 처리되지 않도록 방어 코드를 추가했습니다.
+- Heal은 회복, Revive는 부활로 구분하기 위해 죽은 상태에서는 Heal이 동작하지 않도록 구성했습니다.
+- WBP_NetworkDebug에 DeathText를 추가하여 State: Alive / State: Dead 상태를 표시하도록 확장했습니다.
+- UMPNetworkDebugWidget에 SetDead 함수를 추가했습니다.
+- MPPlayerController에서 HealthComponent의 OnDeath 이벤트를 구독하고, 사망 이벤트를 Debug UI에 전달하도록 구성했습니다.
+- TestDamage 100 명령으로 HP가 0이 되었을 때 HealthText, HealthBar, DeathText가 함께 갱신되는 것을 확인할 예정입니다.
+

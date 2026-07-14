@@ -11,7 +11,7 @@ void UMPNetworkDebugWidget::NativeConstruct()
 
 void UMPNetworkDebugWidget::SetHealth(float CurrentHP, float MaxHP)
 {
-    if (!HealthText)
+    if (HealthText)
     {
         HealthText->SetText(FText::FromString(FString::Printf(TEXT("HP: %.0f / %.0f"), CurrentHP, MaxHP)));
     }
@@ -21,4 +21,14 @@ void UMPNetworkDebugWidget::SetHealth(float CurrentHP, float MaxHP)
         const float HealthPercent = MaxHP > 0.0f ? CurrentHP / MaxHP : 0.0f;
         HealthBar->SetPercent(HealthPercent);
     }
+}
+
+void UMPNetworkDebugWidget::SetDead(bool bDead)
+{
+    if (!DeathText)
+    {
+        return;
+    }
+
+    DeathText->SetText(bDead ? FText::FromString(TEXT("State: Dead")) : FText::FromString(TEXT("State: Alive")));
 }

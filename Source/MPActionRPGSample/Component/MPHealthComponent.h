@@ -5,6 +5,7 @@
 #include "MPHealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, CurrentHP, float, MaxHP);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class MPACTIONRPGSAMPLE_API UMPHealthComponent : public UActorComponent
@@ -14,6 +15,8 @@ class MPACTIONRPGSAMPLE_API UMPHealthComponent : public UActorComponent
 public:
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnHealthChanged OnHealthChanged;
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnDeath OnDeath;
 
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHP, EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
@@ -21,6 +24,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
     float MaxHP = 100.0f;
+
+    UPROPERTY(ReplicatedUsing = OnRep_IsDead, BlueprintReadOnly, Category = "Health")
+    bool bIsDead = false;
 
 public:
     UMPHealthComponent();
@@ -34,6 +40,9 @@ public:
     float GetMaxHP() const;
 
     UFUNCTION(BlueprintCallable, Category = "Health")
+    bool IsDead() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
     void ApplyDamage(float DamageAmount);
 
     UFUNCTION(BlueprintCallable, Category = "Health")
@@ -45,5 +54,10 @@ protected:
     UFUNCTION()
     void OnRep_CurrentHP();
 
+    UFUNCTION()
+    void OnRep_IsDead();
+
     void SetCurrentHP(float NewHP);
+
+    void HandleDeath();
 };

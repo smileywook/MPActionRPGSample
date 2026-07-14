@@ -167,6 +167,7 @@ void AMPPlayerController::TryBindHealthComponent()
 	if (BoundHealthComponent == HealthComponent)
 	{
 		HandleHealthChanged(HealthComponent->GetCurrentHP(), HealthComponent->GetMaxHP());
+		UpdateDeathDebugUI(HealthComponent->IsDead());
 		return;
 	}
 
@@ -174,8 +175,10 @@ void AMPPlayerController::TryBindHealthComponent()
 
 	BoundHealthComponent = HealthComponent;
 	BoundHealthComponent->OnHealthChanged.AddUniqueDynamic(this, &AMPPlayerController::HandleHealthChanged);
+	BoundHealthComponent->OnDeath.AddUniqueDynamic(this, &AMPPlayerController::HandleDeath);
 
 	HandleHealthChanged(BoundHealthComponent->GetCurrentHP(), BoundHealthComponent->GetMaxHP());
+	UpdateDeathDebugUI(BoundHealthComponent->IsDead());
 }
 
 void AMPPlayerController::TestDamage(float DamageAmount)
@@ -271,6 +274,23 @@ void AMPPlayerController::HealControlledPawn(float HealAmount)
 	HealthComponent->Heal(HealAmount);
 }
 
+void AMPPlayerController::HandleDeath()
+{
+	UE_LOG(LogTemp, Log, TEXT("PlayerController Death Event Received"));
+
+	UpdateDeathDebugUI(true);
+}
+
+void AMPPlayerController::UpdateDeathDebugUI(bool bDead)
+{
+	if (!NetworkDebugWidget)
+	{
+		return;
+	}
+
+	NetworkDebugWidget->SetDead(bDead);
+}
+
 void AMPPlayerController::UnbindHealthComponent()
 {
 	if (!BoundHealthComponent)
@@ -279,5 +299,6 @@ void AMPPlayerController::UnbindHealthComponent()
 	}
 
 	BoundHealthComponent->OnHealthChanged.RemoveDynamic(this, &AMPPlayerController::HandleHealthChanged);
+	BoundHealthComponent->OnDeath.RemoveDynamic(this, &AMPPlayerController::HandleDeath);
 	BoundHealthComponent = nullptr;
 }
