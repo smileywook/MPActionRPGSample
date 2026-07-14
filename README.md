@@ -255,3 +255,14 @@ HandleChanged
 - 테스트용 Exec 명령 TestDamage를 추가하여 클라이언트에서 서버 RPC를 통해 HP 감소를 확인할 수 있도록 구성했습니다.
 - HP 변경 흐름이 HealthComponent -> PlayerController -> WBP_NetworkDebug 순서로 전달되는 것을 확인할 예정입니다.
 
+### Week 3 Day 3 - Display Replicated HP with Health Bar
+
+- WBP_NetworkDebug에 HP 표시용 ProgressBar를 추가했습니다.
+- ProgressBar 이름을 HealthBar로 지정하고 Is Variable을 체크했습니다.
+- UMPNetworkDebugWidget에 HealthBar 바인딩 변수를 추가했습니다.
+- SetHealth에서 HealthText와 HealthBar를 함께 갱신하도록 수정했습니다.
+- CurrentHP / MaxHP 값을 이용해 HealthBar Percent를 계산하도록 구성했습니다.
+- MaxHP가 0 이하일 때 잘못된 나누기가 발생하지 않도록 방어 코드를 추가했습니다.
+- 기존 HealthComponent -> PlayerController -> Widget 흐름은 유지하면서 Widget 표시 방식만 확장했습니다.
+- TestDamage 명령을 통해 HP Text와 HealthBar가 함께 갱신되는 것을 확인할 예정입니다.
+
