@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Component/MPHealthComponent.h"
+#include "MPPlayerState.h"
 
 namespace
 {
@@ -139,6 +140,11 @@ void AMPActionRPGSampleCharacter::SetupPlayerInputComponent(UInputComponent* Pla
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMPActionRPGSampleCharacter::Look);
+
+		if (AttackAction)
+		{
+			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
+		}
 	}
 	else
 	{
@@ -180,6 +186,45 @@ void AMPActionRPGSampleCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AMPActionRPGSampleCharacter::Attack()
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Attack][Input] Character=%s HasAuthority=%d LocalRole=%d RemoteRole=%d"),
+		*GetName(), HasAuthority(), static_cast<int32>(GetLocalRole()), static_cast<int32>(GetRemoteRole()));
+
+	ServerStartAttack();
+}
+
+void AMPActionRPGSampleCharacter::ServerStartAttack_Implementation()
+{
+	UE_LOG(LogTemp, Log, TEXT("[Attack][ServerRPC] Character=%s HasAuthority=%d LocalRole=%d RemoteRole=%d"),
+		*GetName(), HasAuthority(), static_cast<int32>(GetLocalRole()), static_cast<int32>(GetRemoteRole()));
+
+	HandleAttack();
+}
+
+void AMPActionRPGSampleCharacter::HandleAttack()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	AMPPlayerState* MPPlayerState = GetPlayerState<AMPPlayerState>();
+	if (MPPlayerState)
+	{
+		const FString PlayerName = MPPlayerState ? MPPlayerState->GetPlayerName() : TEXT("Unknown");
+
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][ServerHandle] Player=%s Character=%s Server-authoritative attack handled."),
+			*PlayerName, *GetName());
+	}
+	
 }
 
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const

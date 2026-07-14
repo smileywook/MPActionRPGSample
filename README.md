@@ -292,3 +292,14 @@ HandleChanged
 - MPPlayerController에서 HealthComponent의 OnDeath 이벤트를 구독하고, 사망 이벤트를 Debug UI에 전달하도록 구성했습니다.
 - TestDamage 100 명령으로 HP가 0이 되었을 때 HealthText, HealthBar, DeathText가 함께 갱신되는 것을 확인할 예정입니다.
 
+### Week 4 Day 1 - Server RPC Attack Request Flow
+
+- `IA_Attack` Input Action을 추가했습니다.
+- 기존 Input Mapping Context에 공격 입력을 매핑했습니다.
+- `AMPActionRPGSampleCharacter`에 `AttackAction`을 추가했습니다.
+- 공격 입력 함수 `Attack()`을 추가했습니다.
+- 클라이언트가 서버에게 공격을 요청할 수 있도록 `ServerStartAttack` Server RPC를 추가했습니다.
+- 서버에서 실제 공격 처리를 시작하는 `HandleAttack()` 함수를 추가했습니다.
+- 공격 입력 시 `Attack → ServerStartAttack → ServerStartAttack_Implementation → HandleAttack` 순서로 호출되는 것을 로그로 확인했습니다.
+- 이번 단계에서는 데미지, Trace, 피격 판정은 아직 처리하지 않고 서버 공격 처리 진입점만 구성했습니다.
+- 이후 단계에서 서버 검증, 공격 Trace, `HealthComponent::ApplyDamage()` 흐름을 연결할 예정입니다.

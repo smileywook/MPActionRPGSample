@@ -7,11 +7,11 @@
 #include "Logging/LogMacros.h"
 #include "MPActionRPGSampleCharacter.generated.h"
 
+struct FInputActionValue;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
-struct FInputActionValue;
 class UMPHealthComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -47,6 +47,8 @@ public:
 	UInputAction* LookAction;
 
 protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> AttackAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UMPHealthComponent> HealthComponent;
 
@@ -66,10 +68,15 @@ protected:
 			
 
 protected:
-
 	virtual void NotifyControllerChanged() override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	void Attack();
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartAttack();
+	void HandleAttack();
 
 public:
 	/** Returns CameraBoom subobject **/
