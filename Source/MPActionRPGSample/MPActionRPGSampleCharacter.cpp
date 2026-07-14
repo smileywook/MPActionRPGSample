@@ -89,6 +89,9 @@ AMPActionRPGSampleCharacter::AMPActionRPGSampleCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	bReplicates = true;
+	HealthComponent = CreateDefaultSubobject<UMPHealthComponent>(TEXT("HealthComponent"));
 }
 
 void AMPActionRPGSampleCharacter::BeginPlay()
@@ -176,4 +179,9 @@ void AMPActionRPGSampleCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const
+{
+	return HealthComponent;
 }

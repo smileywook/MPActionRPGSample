@@ -45,6 +45,113 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - Replication Graph
 - Iris
 
+## Network Architecture Notes
+
+### Gameplay Framework Role
+
+이 프로젝트에서는 멀티플레이 상태를 다음 기준으로 분리합니다.
+
+- GameMode
+  - 서버에만 존재하는 게임 규칙 담당
+  - 플레이어 접속 시 초기 PlayerState 설정
+  - 예: PostLogin에서 PlayerDisplayName 설정
+
+- GameState
+  - 모든 클라이언트가 알아야 하는 게임 전체 상태 담당
+  - 접속 중인 PlayerState 목록은 PlayerArray를 통해 확인
+
+- PlayerState
+  - 플레이어별 장기 상태 담당
+  - Pawn이 죽거나 리스폰되어도 유지되어야 하는 값 저장
+  - 예: PlayerDisplayName, 추후 Gold / Score / Team 등
+
+- PlayerController
+  - 로컬 플레이어 입력과 UI 소유
+  - 로컬 Debug Widget 생성
+  - 로컬 PlayerState 이벤트 구독
+
+- Character / Pawn
+  - 월드에 존재하는 실제 조작 대상
+  - 이동, 전투, HP, 애니메이션 처리 예정
+  
+  ### PlayerState Replication Flow
+
+PlayerDisplayName은 PlayerState에 저장하고 서버에서만 변경합니다.
+
+```text
+Client Join
+→ Server MPGameMode::PostLogin
+→ Server gets MPPlayerState
+→ Server calls SetPlayerDisplayName
+→ PlayerDisplayName changed on server
+→ PlayerDisplayName replicated to clients
+→ Client OnRep_PlayerDisplayName
+→ HandlePlayerDisplayNameChanged
+→ OnPlayerDisplayNameChanged Broadcast
+→ UI / Controller can react
+```
+
+### GameState PlayerArray Flow
+
+GameState는 접속 중인 PlayerState 목록을 PlayerArray로 관리합니다.
+
+```text
+Client wants player list
+→ Get GameState
+→ Cast to MPGameState
+→ MPGameState reads PlayerArray
+→ Cast each APlayerState to MPPlayerState
+→ Read PlayerDisplayName
+→ Build player list text
+→ WBP_NetworkDebug displays connected players
+```
+
+### RepNotify Handling Pattern
+
+복제 변수는 OnRep 함수에서 직접 UI를 수정하지 않습니다.
+
+대신 다음 패턴을 사용합니다.
+
+```text
+Server State Change
+→ HandleChanged on Server
+
+Client Replication Received
+→ OnRep_Variable
+→ HandleChanged on Client
+
+HandleChanged
+→ Log / Validation / Delegate Broadcast
+→ UI or Controller reacts
+```
+
+## Test Checklist
+
+### Week 2 Replication Test
+
+#### Listen Server
+
+- [ ] Number of Players = 2
+- [ ] Net Mode = Play As Listen Server
+- [ ] Listen Server 창에 Network Debug Widget 표시
+- [ ] Client 창에 Network Debug Widget 표시
+- [ ] 각 창에 PlayerDisplayName 표시
+- [ ] 각 창의 Players 목록에 모든 접속자 표시
+- [ ] Output Log에서 PostLogin 로그 확인
+- [ ] Output Log에서 OnRep_PlayerDisplayName 로그 확인
+- [ ] Output Log에서 OnPlayerDisplayNameChanged 이벤트 수신 로그 확인
+
+#### Play As Client
+
+- [ ] Number of Players = 2
+- [ ] Net Mode = Play As Client
+- [ ] 두 클라이언트 창에 Network Debug Widget 표시
+- [ ] 각 클라이언트에 PlayerDisplayName 표시
+- [ ] 각 클라이언트의 Players 목록이 동일하게 표시
+- [ ] Output Log에서 PlayerState 이벤트 바인딩 로그 확인
+- [ ] Output Log에서 PlayerDisplayName 이벤트 수신 로그 확인
+
+
 ## Dev Log
 
 ### Week 1 Day 1 - Project Setup
@@ -116,3 +223,23 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
 - MPPlayerController에서 로컬 PlayerState의 OnPlayerDisplayNameChanged 이벤트를 구독하고, 이벤트 수신 로그를 확인했습니다.
 - PlayerState가 BeginPlay 시점에 아직 준비되지 않을 수 있으므로 BeginPlay와 OnRep_PlayerState 양쪽에서 바인딩을 시도하도록 처리했습니다.
 - 이후 HP / Gold / Skill Cooldown UI도 OnRep → Handle → Delegate → UI 갱신 패턴으로 확장할 예정입니다.
+
+### Week 2 Day 5 - Replication Flow Review
+
+- 2주차 동안 구현한 PlayerState Replication, GameState PlayerArray, OnRep → Handle → Delegate 구조를 README에 정리했습니다.
+- PlayerDisplayName이 서버에서 설정되고 클라이언트로 복제된 뒤, OnRep와 Delegate를 통해 외부 시스템에 변경을 알리는 흐름을 문서화했습니다.
+- GameState의 PlayerArray를 통해 모든 접속자의 PlayerState를 확인하고, Debug UI에 접속자 목록을 표시하는 구조를 정리했습니다.
+- Listen Server와 Play As Client 환경에서 검증해야 할 체크리스트를 작성했습니다.
+- 3주차 HealthComponent 구현 전에 Replication 기본 흐름을 문서와 테스트 기준으로 고정했습니다.
+
+### Week 3 Day 1 - Server Authoritative Health Component
+
+- UMPHealthComponent를 추가했습니다.
+- CurrentHP와 MaxHP를 분리하여 HP 데이터를 Component에서 관리하도록 구성했습니다.
+- CurrentHP에 ReplicatedUsing=OnRep_CurrentHP를 적용했습니다.
+- GetLifetimeReplicatedProps에서 CurrentHP를 DOREPLIFETIME으로 등록했습니다.
+- ApplyDamage는 서버 권한에서만 동작하도록 HasAuthority 검사를 추가했습니다.
+- SetCurrentHP에서 HP Clamp, 변경 여부 확인, OnHealthChanged Broadcast를 처리하도록 정리했습니다.
+- 클라이언트에서는 OnRep_CurrentHP에서 OnHealthChanged를 Broadcast하도록 구성했습니다.
+- MPActionRPGSampleCharacter에 HealthComponent를 추가했습니다.
+- 이후 PlayerController가 HealthComponent의 OnHealthChanged를 구독하고 UI로 전달하는 흐름으로 확장할 예정입니다.

@@ -33,11 +33,13 @@ void AMPPlayerState::SetPlayerDisplayName(const FString& NewDisplayName)
 
 	PlayerDisplayName = NewDisplayName;
 
+	// 서버에서 직접 변경한 값은 서버에서도 후처리가 필요하므로 Handle 함수를 호출한다.
 	HandlePlayerDisplayNameChanged();
 }
 
 void AMPPlayerState::OnRep_PlayerDisplayName()
 {
+	// 클라이언트는 복제된 값을 수신한 뒤 동일한 후처리 경로를 사용한다.
 	HandlePlayerDisplayNameChanged();	
 }
 

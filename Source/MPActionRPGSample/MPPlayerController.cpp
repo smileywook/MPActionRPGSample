@@ -71,6 +71,8 @@ void AMPPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	// 클라이언트에서는 BeginPlay 시점에 PlayerState가 아직 준비되지 않을 수 있으므로
+	// PlayerState 복제 완료 시점에도 바인딩을 다시 시도한다.
 	TryBindPlayerStateEvents();
 }
 
