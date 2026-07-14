@@ -7,7 +7,8 @@
 #include "MPPlayerController.generated.h"
 
 class AMPPlayerState;
-class UUserWidget;
+class UMPHealthComponent;
+class UMPNetworkDebugWidget;
 
 /**
  * 
@@ -19,22 +20,48 @@ class MPACTIONRPGSAMPLE_API AMPPlayerController : public APlayerController
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<UUserWidget> NetworkDebugWidgetClass;
+	TSubclassOf<UMPNetworkDebugWidget> NetworkDebugWidgetClass;
 
 	UPROPERTY()
-	TObjectPtr<UUserWidget> NetworkDebugWidget;
+	TObjectPtr<UMPNetworkDebugWidget> NetworkDebugWidget;
+
+	UPROPERTY()
+	TObjectPtr<UMPHealthComponent> BoundHealthComponent;
 
 private:
 	UPROPERTY()
 	TObjectPtr<AMPPlayerState> CachedMPPlayerState;
+
+public:
+	UFUNCTION(Exec)
+	void TestDamage(float DamageAmount);
+
+protected:
+	UFUNCTION()
+	void HandleHealthChanged(float CurrentHP, float MaxHP);
+
+	UFUNCTION(Server, Reliable)
+	void ServerRequestApplyTestDamage(float DamageAmount);
+
+private:
+	UFUNCTION()
+	void HandlePlayerDisplayNameChanged(const FString& NewDisplayName);
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnUnPossess() override;
+		
 	virtual void OnRep_PlayerState() override;
+	virtual void OnRep_Pawn() override;
 
 private:
 	void TryBindPlayerStateEvents();
 
-	UFUNCTION()
-	void HandlePlayerDisplayNameChanged(const FString& NewDisplayName);
+	void TryBindHealthComponent();
+	void UnbindHealthComponent();
+
+	void ApplyDamageToControlledPawn(float DamageAmount);
+	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
 };

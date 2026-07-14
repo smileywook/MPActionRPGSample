@@ -243,3 +243,15 @@ HandleChanged
 - 클라이언트에서는 OnRep_CurrentHP에서 OnHealthChanged를 Broadcast하도록 구성했습니다.
 - MPActionRPGSampleCharacter에 HealthComponent를 추가했습니다.
 - 이후 PlayerController가 HealthComponent의 OnHealthChanged를 구독하고 UI로 전달하는 흐름으로 확장할 예정입니다.
+
+### Week 3 Day 2 - Bind Health Change Event to PlayerController UI Flow
+
+- MPPlayerController에서 현재 Pawn의 UMPHealthComponent를 찾아 OnHealthChanged 이벤트를 구독하도록 구성했습니다.
+- Pawn이 BeginPlay 시점에 준비되지 않을 수 있으므로 BeginPlay, OnPossess, OnRep_Pawn에서 HealthComponent 바인딩을 시도하도록 정리했습니다.
+- 기존 HealthComponent 바인딩이 남지 않도록 UnbindHealthComponent를 추가했습니다.
+- HandleHealthChanged에서 HP 변경 이벤트를 수신하고 Debug UI로 전달하도록 구성했습니다.
+- WBP_NetworkDebug의 C++ 부모 클래스로 UMPNetworkDebugWidget을 추가했습니다.
+- UMPNetworkDebugWidget에 SetHealth 함수를 추가하여 HealthText에 현재 HP / 최대 HP를 표시하도록 구현했습니다.
+- 테스트용 Exec 명령 TestDamage를 추가하여 클라이언트에서 서버 RPC를 통해 HP 감소를 확인할 수 있도록 구성했습니다.
+- HP 변경 흐름이 HealthComponent -> PlayerController -> WBP_NetworkDebug 순서로 전달되는 것을 확인할 예정입니다.
+

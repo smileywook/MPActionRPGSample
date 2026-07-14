@@ -2,7 +2,9 @@
 
 
 #include "MPPlayerController.h"
-#include "Blueprint/UserWidget.h"
+#include "MPActionRPGSampleCharacter.h"
+#include "Component/MPHealthComponent.h"
+#include "UI/MPNetworkDebugWidget.h"
 #include "MPPlayerState.h"
 
 namespace
@@ -46,25 +48,38 @@ void AMPPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("[PlayerController BeginPlay] Name=%s | NetMode=%s | LocalRole=%s | RemoteRole=%s | HasAuthority=%s | IsLocalController=%s"),
-		*GetName(),
-		*NetModeToString(GetNetMode()),
-		*RoleToString(GetLocalRole()),
-		*RoleToString(GetRemoteRole()),
-		HasAuthority() ? TEXT("true") : TEXT("false"),
-		IsLocalController() ? TEXT("true") : TEXT("false"));
-
 	if (IsLocalController() && NetworkDebugWidgetClass)
 	{
-		NetworkDebugWidget = CreateWidget<UUserWidget>(this, NetworkDebugWidgetClass);
+		NetworkDebugWidget = CreateWidget<UMPNetworkDebugWidget>(this, NetworkDebugWidgetClass);
 
 		if (NetworkDebugWidget)
 		{
-			NetworkDebugWidget->AddToViewport(999);
+			NetworkDebugWidget->AddToViewport();
 		}
 	}
 
 	TryBindPlayerStateEvents();
+}
+
+void AMPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UnbindHealthComponent();
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void AMPPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	TryBindHealthComponent();
+}
+
+void AMPPlayerController::OnUnPossess()
+{
+	UnbindHealthComponent();
+
+	Super::OnUnPossess();
 }
 
 void AMPPlayerController::OnRep_PlayerState()
@@ -74,6 +89,15 @@ void AMPPlayerController::OnRep_PlayerState()
 	// 클라이언트에서는 BeginPlay 시점에 PlayerState가 아직 준비되지 않을 수 있으므로
 	// PlayerState 복제 완료 시점에도 바인딩을 다시 시도한다.
 	TryBindPlayerStateEvents();
+
+	TryBindHealthComponent();
+}
+
+void AMPPlayerController::OnRep_Pawn()
+{
+	Super::OnRep_Pawn();
+
+	TryBindHealthComponent();
 }
 
 void AMPPlayerController::TryBindPlayerStateEvents()
@@ -105,11 +129,6 @@ void AMPPlayerController::TryBindPlayerStateEvents()
 	CachedMPPlayerState->OnPlayerDisplayNameChanged.RemoveDynamic(this, &AMPPlayerController::HandlePlayerDisplayNameChanged);
 	CachedMPPlayerState->OnPlayerDisplayNameChanged.AddDynamic(this, &AMPPlayerController::HandlePlayerDisplayNameChanged);
 
-	UE_LOG(LogTemp, Warning, TEXT("[PlayerController] Bound PlayerState events. Controller=%s | PlayerState=%s | DisplayName=%s"),
-		*GetName(),
-		*CachedMPPlayerState->GetName(),
-		*CachedMPPlayerState->GetPlayerDisplayName());
-
 	// 초기 동기화.
 	// 이미 복제된 값이 있는 상태에서 바인딩될 수 있으므로 현재 값을 한 번 직접 반영한다.
 	HandlePlayerDisplayNameChanged(CachedMPPlayerState->GetPlayerDisplayName());
@@ -122,4 +141,103 @@ void AMPPlayerController::HandlePlayerDisplayNameChanged(const FString& NewDispl
 		*NewDisplayName,
 		*NetModeToString(GetNetMode()),
 		IsLocalController() ? TEXT("true") : TEXT("false"));
+}
+
+void AMPPlayerController::TryBindHealthComponent()
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	AMPActionRPGSampleCharacter* MPCharacter = Cast<AMPActionRPGSampleCharacter>(GetPawn());
+	if (!MPCharacter)
+	{
+		return;
+	}
+
+	UMPHealthComponent* HealthComponent = MPCharacter->GetHealthComponent();
+	if (!HealthComponent)
+	{
+		return;
+	}
+
+	if (BoundHealthComponent == HealthComponent)
+	{
+		HandleHealthChanged(HealthComponent->GetCurrentHP(), HealthComponent->GetMaxHP());
+		return;
+	}
+
+	UnbindHealthComponent();
+
+	BoundHealthComponent = HealthComponent;
+	BoundHealthComponent->OnHealthChanged.AddUniqueDynamic(this, &AMPPlayerController::HandleHealthChanged);
+
+	HandleHealthChanged(BoundHealthComponent->GetCurrentHP(), BoundHealthComponent->GetMaxHP());
+}
+
+void AMPPlayerController::TestDamage(float DamageAmount)
+{
+	if (DamageAmount <= 0.0f)
+	{
+		DamageAmount = 10.0f;
+	}
+
+	if (HasAuthority())
+	{
+		ApplyDamageToControlledPawn(DamageAmount);
+		return;
+	}
+
+	ServerRequestApplyTestDamage(DamageAmount);
+}
+
+void AMPPlayerController::ServerRequestApplyTestDamage_Implementation(float DamageAmount)
+{
+	ApplyDamageToControlledPawn(DamageAmount);
+}
+
+void AMPPlayerController::ApplyDamageToControlledPawn(float DamageAmount)
+{
+	AMPActionRPGSampleCharacter* MPCharacter = Cast<AMPActionRPGSampleCharacter>(GetPawn());
+	if (!MPCharacter)
+	{
+		return;
+	}
+
+	UMPHealthComponent* HealthComponent = MPCharacter->GetHealthComponent();
+	if (!HealthComponent)
+	{
+		return;
+	}
+
+	HealthComponent->ApplyDamage(DamageAmount);
+}
+
+void AMPPlayerController::HandleHealthChanged(float CurrentHP, float MaxHP)
+{
+	UE_LOG(LogTemp, Log, TEXT("PlayerController Health Changed: %.1f / %.1f"), CurrentHP, MaxHP);
+
+	UpdateHealthDebugUI(CurrentHP, MaxHP);
+}
+
+void AMPPlayerController::UpdateHealthDebugUI(float CurrentHP, float MaxHP)
+{
+	if (!NetworkDebugWidget)
+	{
+		return;
+	}
+
+	NetworkDebugWidget->SetHealth(CurrentHP, MaxHP);
+}
+
+void AMPPlayerController::UnbindHealthComponent()
+{
+	if (!BoundHealthComponent)
+	{
+		return;
+	}
+
+	BoundHealthComponent->OnHealthChanged.RemoveDynamic(this, &AMPPlayerController::HandleHealthChanged);
+	BoundHealthComponent = nullptr;
 }
