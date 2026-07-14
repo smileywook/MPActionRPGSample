@@ -303,3 +303,14 @@ HandleChanged
 - 공격 입력 시 `Attack → ServerStartAttack → ServerStartAttack_Implementation → HandleAttack` 순서로 호출되는 것을 로그로 확인했습니다.
 - 이번 단계에서는 데미지, Trace, 피격 판정은 아직 처리하지 않고 서버 공격 처리 진입점만 구성했습니다.
 - 이후 단계에서 서버 검증, 공격 Trace, `HealthComponent::ApplyDamage()` 흐름을 연결할 예정입니다.
+
+### Week 4 Day 2 - Server Attack Validation and Attack State
+
+- 서버에서 공격 요청을 바로 처리하지 않고 `CanAttack()`을 통해 공격 가능 여부를 먼저 검사하도록 정리했습니다.
+- `AMPActionRPGSampleCharacter`에 `bIsAttacking`, `AttackCooldown`, `AttackDuration`, `LastAttackTime`을 추가했습니다.
+- 공격 중복 요청을 막기 위해 `bIsAttacking` 상태를 사용했습니다.
+- 공격 연타를 제한하기 위해 `LastAttackTime`과 `AttackCooldown` 기반의 쿨타임 검사를 추가했습니다.
+- 사망 상태에서는 공격할 수 없도록 `HealthComponent`의 사망 상태를 확인하도록 구성했습니다.
+- 공격이 시작되면 서버에서 `HandleAttack()`이 실행되고, 일정 시간이 지난 뒤 `FinishAttack()`에서 공격 상태를 종료하도록 구성했습니다.
+- 공격 요청이 거절될 경우 `AlreadyAttacking`, `Cooldown`, `Dead` 등의 이유를 로그로 확인할 수 있도록 했습니다.
+- 이번 단계에서는 아직 Trace나 데미지 적용은 하지 않고, 서버 공격 검증과 기본 공격 상태만 정리했습니다.

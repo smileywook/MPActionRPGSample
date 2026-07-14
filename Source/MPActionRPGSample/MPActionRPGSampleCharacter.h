@@ -49,8 +49,23 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> AttackAction;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UMPHealthComponent> HealthComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackCooldown = 0.8f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackDuration = 0.3f;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack")
+	bool bIsAttacking = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack")
+	float LastAttackTime = -1000.0f;
+
+	FTimerHandle AttackFinishTimerHandle;
 
 public:
 	AMPActionRPGSampleCharacter();
@@ -76,7 +91,10 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerStartAttack();
+
+	bool CanAttack(FString& OutFailReason) const;
 	void HandleAttack();
+	void FinishAttack();
 
 public:
 	/** Returns CameraBoom subobject **/

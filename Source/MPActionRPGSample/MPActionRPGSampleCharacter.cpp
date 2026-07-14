@@ -12,6 +12,7 @@
 #include "InputActionValue.h"
 #include "Component/MPHealthComponent.h"
 #include "MPPlayerState.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -203,10 +204,63 @@ void AMPActionRPGSampleCharacter::Attack()
 
 void AMPActionRPGSampleCharacter::ServerStartAttack_Implementation()
 {
-	UE_LOG(LogTemp, Log, TEXT("[Attack][ServerRPC] Character=%s HasAuthority=%d LocalRole=%d RemoteRole=%d"),
-		*GetName(), HasAuthority(), static_cast<int32>(GetLocalRole()), static_cast<int32>(GetRemoteRole()));
+	FString FailReason;
+	if (!CanAttack(FailReason))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][Rejected] Character=%s Reason=%s"), *GetName(), *FailReason);
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[Attack][Accepted] Character=%s HasAuthority=%d"), *GetName(), HasAuthority());
 
 	HandleAttack();
+}
+
+bool AMPActionRPGSampleCharacter::CanAttack(FString& OutFailReason) const
+{
+	OutFailReason = TEXT("None");
+
+	if (!HasAuthority())
+	{
+		OutFailReason = TEXT("NoAuthority");
+		return false;
+	}
+
+	if (!HealthComponent)
+	{
+		OutFailReason = TEXT("NoHealthComponent");
+		return false;
+	}
+
+	if (HealthComponent->IsDead())
+	{
+		OutFailReason = TEXT("Dead");
+		return false;
+	}
+
+	if (bIsAttacking)
+	{
+		OutFailReason = TEXT("AlreadyAttacking");
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	if (!World)
+	{
+		OutFailReason = TEXT("NoWorld");
+		return false;
+	}
+
+	const float CurrentTime = World->GetTimeSeconds();
+	const float ElapsedTime = CurrentTime - LastAttackTime;
+
+	if (ElapsedTime < AttackCooldown)
+	{
+		OutFailReason = FString::Printf(TEXT("Cooldown %.2f / %.2f"), ElapsedTime, AttackCooldown);
+		return false;
+	}
+
+	return true;
 }
 
 void AMPActionRPGSampleCharacter::HandleAttack()
@@ -216,15 +270,32 @@ void AMPActionRPGSampleCharacter::HandleAttack()
 		return;
 	}
 
-	AMPPlayerState* MPPlayerState = GetPlayerState<AMPPlayerState>();
-	if (MPPlayerState)
-	{
-		const FString PlayerName = MPPlayerState ? MPPlayerState->GetPlayerName() : TEXT("Unknown");
+	bIsAttacking = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("[Attack][ServerHandle] Player=%s Character=%s Server-authoritative attack handled."),
-			*PlayerName, *GetName());
+	if (UWorld* World = GetWorld())
+	{
+		LastAttackTime = World->GetTimeSeconds();
 	}
-	
+
+	GetWorldTimerManager().ClearTimer(AttackFinishTimerHandle);
+	GetWorldTimerManager().SetTimer(AttackFinishTimerHandle, this, &ThisClass::FinishAttack, AttackDuration, false);
+
+	APlayerState* PS = GetPlayerState();
+	const FString PlayerName = PS ? PS->GetPlayerName() : TEXT("Unknown");
+
+	UE_LOG(LogTemp, Warning, TEXT("[Attack][Started] Player=%s Character=%s Cooldown=%.2f Duration=%.2f"), *PlayerName, *GetName(), AttackCooldown, AttackDuration);	
+}
+
+void AMPActionRPGSampleCharacter::FinishAttack()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	bIsAttacking = false;
+
+	UE_LOG(LogTemp, Log, TEXT("[Attack][Finished] Character=%s"), *GetName());
 }
 
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const
