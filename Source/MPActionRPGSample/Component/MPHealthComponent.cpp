@@ -51,6 +51,21 @@ void UMPHealthComponent::ApplyDamage(float DamageAmount)
     SetCurrentHP(CurrentHP - DamageAmount);
 }
 
+void UMPHealthComponent::Heal(float HealAmount)
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
+    if (HealAmount <= 0.0f)
+    {
+        return;
+    }
+
+    SetCurrentHP(CurrentHP + HealAmount);
+}
+
 void UMPHealthComponent::SetCurrentHP(float NewHP)
 {
     const float ClampedHP = FMath::Clamp(NewHP, 0.0f, MaxHP);
@@ -61,12 +76,10 @@ void UMPHealthComponent::SetCurrentHP(float NewHP)
     }
 
     CurrentHP = ClampedHP;
-    UE_LOG(LogTemp, Log, TEXT("Server HP Changed: %.1f / %.1f"), CurrentHP, MaxHP);
     OnHealthChanged.Broadcast(CurrentHP, MaxHP);
 }
 
 void UMPHealthComponent::OnRep_CurrentHP()
 {
-    UE_LOG(LogTemp, Log, TEXT("Client HP Replicated: %.1f / %.1f"), CurrentHP, MaxHP);
     OnHealthChanged.Broadcast(CurrentHP, MaxHP);
 }

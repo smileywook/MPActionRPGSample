@@ -266,3 +266,15 @@ HandleChanged
 - 기존 HealthComponent -> PlayerController -> Widget 흐름은 유지하면서 Widget 표시 방식만 확장했습니다.
 - TestDamage 명령을 통해 HP Text와 HealthBar가 함께 갱신되는 것을 확인할 예정입니다.
 
+### Week 3 Day 4 - Add Server Authoritative HP Heal Flow
+
+- UMPHealthComponent에 Heal 함수를 추가했습니다.
+- Heal은 ApplyDamage와 동일하게 서버 권한에서만 동작하도록 HasAuthority 검사를 적용했습니다.
+- HealAmount가 0 이하일 경우 처리하지 않도록 방어 코드를 추가했습니다.
+- HP 회복 시에도 CurrentHP를 직접 수정하지 않고 SetCurrentHP를 통해 변경하도록 정리했습니다.
+- SetCurrentHP가 데미지와 회복 모두에서 사용하는 공통 HP 변경 함수가 되도록 구조를 정리했습니다.
+- MPPlayerController에 테스트용 Exec 명령 TestHeal을 추가했습니다.
+- 클라이언트에서 TestHeal을 실행하면 ServerRequestHeal RPC를 통해 서버에서 회복이 적용되도록 구성했습니다.
+- HealControlledPawn 함수를 추가하여 현재 Pawn의 UMPHealthComponent에 Heal 요청을 전달하도록 구현했습니다.
+- TestDamage와 TestHeal을 함께 사용하여 HP 감소와 회복이 모두 Replication과 OnRep_CurrentHP를 거쳐 UI에 반영되는 것을 확인할 예정입니다.
+

@@ -134,6 +134,8 @@ void AMPPlayerController::TryBindPlayerStateEvents()
 	HandlePlayerDisplayNameChanged(CachedMPPlayerState->GetPlayerDisplayName());
 }
 
+
+
 void AMPPlayerController::HandlePlayerDisplayNameChanged(const FString& NewDisplayName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[PlayerController] PlayerDisplayName event received. Controller=%s | DisplayName=%s | NetMode=%s | IsLocalController=%s"),
@@ -192,6 +194,22 @@ void AMPPlayerController::TestDamage(float DamageAmount)
 	ServerRequestApplyTestDamage(DamageAmount);
 }
 
+void AMPPlayerController::TestHeal(float HealAmount)
+{
+	if (HealAmount <= 0.0f)
+	{
+		HealAmount = 10.0f;
+	}
+
+	if (HasAuthority())
+	{
+		HealControlledPawn(HealAmount);
+		return;
+	}
+
+	ServerRequestHeal(HealAmount);
+}
+
 void AMPPlayerController::ServerRequestApplyTestDamage_Implementation(float DamageAmount)
 {
 	ApplyDamageToControlledPawn(DamageAmount);
@@ -229,6 +247,28 @@ void AMPPlayerController::UpdateHealthDebugUI(float CurrentHP, float MaxHP)
 	}
 
 	NetworkDebugWidget->SetHealth(CurrentHP, MaxHP);
+}
+
+void AMPPlayerController::ServerRequestHeal_Implementation(float HealAmount)
+{
+	HealControlledPawn(HealAmount);
+}
+
+void AMPPlayerController::HealControlledPawn(float HealAmount)
+{
+	AMPActionRPGSampleCharacter* MPCharacter = Cast<AMPActionRPGSampleCharacter>(GetPawn());
+	if (!MPCharacter)
+	{
+		return;
+	}
+
+	UMPHealthComponent* HealthComponent = MPCharacter->GetHealthComponent();
+	if (!HealthComponent)
+	{
+		return;
+	}
+
+	HealthComponent->Heal(HealAmount);
 }
 
 void AMPPlayerController::UnbindHealthComponent()
