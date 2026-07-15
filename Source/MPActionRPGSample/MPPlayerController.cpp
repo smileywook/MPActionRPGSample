@@ -134,8 +134,6 @@ void AMPPlayerController::TryBindPlayerStateEvents()
 	HandlePlayerDisplayNameChanged(CachedMPPlayerState->GetPlayerDisplayName());
 }
 
-
-
 void AMPPlayerController::HandlePlayerDisplayNameChanged(const FString& NewDisplayName)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[PlayerController] PlayerDisplayName event received. Controller=%s | DisplayName=%s | NetMode=%s | IsLocalController=%s"),
@@ -197,22 +195,6 @@ void AMPPlayerController::TestDamage(float DamageAmount)
 	ServerRequestApplyTestDamage(DamageAmount);
 }
 
-void AMPPlayerController::TestHeal(float HealAmount)
-{
-	if (HealAmount <= 0.0f)
-	{
-		HealAmount = 10.0f;
-	}
-
-	if (HasAuthority())
-	{
-		HealControlledPawn(HealAmount);
-		return;
-	}
-
-	ServerRequestHeal(HealAmount);
-}
-
 void AMPPlayerController::ServerRequestApplyTestDamage_Implementation(float DamageAmount)
 {
 	ApplyDamageToControlledPawn(DamageAmount);
@@ -252,6 +234,22 @@ void AMPPlayerController::UpdateHealthDebugUI(float CurrentHP, float MaxHP)
 	NetworkDebugWidget->SetHealth(CurrentHP, MaxHP);
 }
 
+void AMPPlayerController::TestHeal(float HealAmount)
+{
+	if (HealAmount <= 0.0f)
+	{
+		HealAmount = 10.0f;
+	}
+
+	if (HasAuthority())
+	{
+		HealControlledPawn(HealAmount);
+		return;
+	}
+
+	ServerRequestHeal(HealAmount);
+}
+
 void AMPPlayerController::ServerRequestHeal_Implementation(float HealAmount)
 {
 	HealControlledPawn(HealAmount);
@@ -272,6 +270,56 @@ void AMPPlayerController::HealControlledPawn(float HealAmount)
 	}
 
 	HealthComponent->Heal(HealAmount);
+}
+
+void AMPPlayerController::TestRespawn()
+{
+	UE_LOG(LogTemp, Log, TEXT("[Respawn][Input] Controller=%s HasAuthority=%d"), *GetName(), HasAuthority());
+
+	if (HasAuthority())
+	{
+		RequestRespawnControlledPawn();
+		return;
+	}
+
+	ServerRequestRespawn();
+}
+
+void AMPPlayerController::ServerRequestRespawn_Implementation()
+{
+	UE_LOG(LogTemp, Log, TEXT("[Respawn][ServerRequest] Controller=%s"), *GetName());
+
+	RequestRespawnControlledPawn();
+}
+
+void AMPPlayerController::RequestRespawnControlledPawn()
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	AMPActionRPGSampleCharacter* MPCharacter = Cast<AMPActionRPGSampleCharacter>(GetPawn());
+	if (!MPCharacter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Respawn][Rejected] Controller=%s Reason=NoPawn"), *GetName());
+		return;
+	}
+
+	UMPHealthComponent* HealthComponent = MPCharacter->GetHealthComponent();
+	if (!HealthComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Respawn][Rejected] Controller=%s Pawn=%s Reason=NoHealthComponent"), *GetName(), *GetNameSafe(MPCharacter));
+		return;
+	}
+
+	if (!HealthComponent->IsDead())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Respawn][Rejected] Controller=%s Pawn=%s Reason=NotDead"), *GetName(), *GetNameSafe(MPCharacter));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[Respawn][Accepted] Controller=%s Pawn=%s"), *GetName(), *GetNameSafe(MPCharacter));
 }
 
 void AMPPlayerController::HandleDeath()

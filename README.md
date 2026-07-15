@@ -402,3 +402,14 @@ HandleChanged
 - 단, 서버 권위 검증을 유지하기 위해 CanAttack의 Dead 검사는 그대로 남겨두었습니다.
 - 이를 통해 클라이언트 입력 단계와 서버 검증 단계 양쪽에서 사망 상태 입력이 제한되도록 구성했습니다.
 - Look 입력은 오늘 범위에서는 제한하지 않고, 죽은 상태에서도 카메라 확인은 가능하도록 유지했습니다.
+
+### Week 5 Day 3 - Respawn Request Server RPC
+
+- 5주차 3일차에서는 사망한 플레이어가 서버에 리스폰을 요청하는 기본 RPC 흐름을 추가했습니다.
+- MPPlayerController에 TestRespawn Exec 명령을 추가하여 로컬에서 리스폰 요청을 테스트할 수 있도록 했습니다.
+- 클라이언트에서 TestRespawn을 실행하면 ServerRequestRespawn RPC를 통해 서버로 요청을 전달하도록 구성했습니다.
+- Listen Server처럼 이미 서버 권한을 가진 경우에는 RPC를 거치지 않고 바로 서버 검증 함수로 들어가도록 처리했습니다.
+- 서버에서는 RequestRespawnControlledPawn에서 현재 Pawn과 HealthComponent를 확인하고, 사망 상태인지 검증했습니다.
+- 살아있는 상태에서 리스폰을 요청하면 Reason=NotDead로 거절되도록 했습니다.
+- 사망 상태에서 리스폰을 요청하면 Respawn Accepted 로그가 출력되도록 했습니다.
+- 오늘은 리스폰 요청 흐름만 검증하고, 실제 HP 초기화 / 위치 재배치 / UI 복구는 다음 일차에서 처리할 예정입니다.

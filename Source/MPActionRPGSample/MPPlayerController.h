@@ -37,6 +37,8 @@ public:
 	void TestDamage(float DamageAmount);
 	UFUNCTION(Exec)
 	void TestHeal(float HealAmount);
+	UFUNCTION(Exec)
+	void TestRespawn();
 
 protected:
 	UFUNCTION()
@@ -48,6 +50,8 @@ protected:
 	void ServerRequestApplyTestDamage(float DamageAmount);
 	UFUNCTION(Server, Reliable)
 	void ServerRequestHeal(float HealAmount);
+	UFUNCTION(Server, Reliable)
+	void ServerRequestRespawn();
 
 private:
 	UFUNCTION()
@@ -70,6 +74,7 @@ private:
 
 	void ApplyDamageToControlledPawn(float DamageAmount);	
 	void HealControlledPawn(float HealAmount);
+	void RequestRespawnControlledPawn();
 
 	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
 	void UpdateDeathDebugUI(bool bDead);
