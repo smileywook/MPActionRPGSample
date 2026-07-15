@@ -66,6 +66,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
 	float AttackTraceRadius = 50.0f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackDamage = 20.0f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Debug")
 	bool bDrawAttackTrace = true;
 
@@ -106,6 +109,7 @@ protected:
 	void HandleAttack();
 	void FinishAttack();
 	bool PerformAttackTrace(FHitResult& OutHit) const;
+	bool ApplyAttackDamageToActor(AActor* TargetActor);
 
 public:
 	/** Returns CameraBoom subobject **/

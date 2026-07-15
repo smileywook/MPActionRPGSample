@@ -2,9 +2,9 @@
 
 #include "MPActionRPGSampleCharacter.h"
 #include "MPPlayerState.h"
-#include "Component/MPHealthComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Component/MPHealthComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
@@ -293,8 +293,9 @@ void AMPActionRPGSampleCharacter::HandleAttack()
 		AActor* HitActor = HitResult.GetActor();
 		const FString HitActorName = HitActor ? HitActor->GetName() : TEXT("None");
 
-		UE_LOG(LogTemp, Warning, TEXT("[Attack][TraceHit] Attacker=%s HitActor=%s HitLocation=%s"),
-			*GetName(), *HitActorName, *HitResult.ImpactPoint.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][TraceHit] Attacker=%s HitActor=%s HitLocation=%s"), *GetName(), *HitActorName, *HitResult.ImpactPoint.ToString());
+
+		ApplyAttackDamageToActor(HitActor);
 	}
 	else
 	{
@@ -351,6 +352,44 @@ bool AMPActionRPGSampleCharacter::PerformAttackTrace(FHitResult& OutHit) const
 	}
 
 	return bHit && OutHit.GetActor();
+}
+
+bool AMPActionRPGSampleCharacter::ApplyAttackDamageToActor(AActor* TargetActor)
+{
+	if (!HasAuthority())
+	{
+		return false;
+	}
+
+	if (!TargetActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageFailed] Attacker=%s Reason=NoTargetActor"), *GetName());
+		return false;
+	}
+
+	if (TargetActor == this)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageFailed] Attacker=%s Reason=SelfTarget"), *GetName());
+		return false;
+	}
+
+	UMPHealthComponent* TargetHealthComponent = TargetActor->FindComponentByClass<UMPHealthComponent>();
+	if (!TargetHealthComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageFailed] Attacker=%s Target=%s Reason=NoHealthComponent"), *GetName(), *TargetActor->GetName());
+		return false;
+	}
+
+	if (TargetHealthComponent->IsDead())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageFailed] Attacker=%s Target=%s Reason=TargetDead"), *GetName(), *TargetActor->GetName());
+		return false;
+	}
+
+	TargetHealthComponent->ApplyDamage(AttackDamage);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageApplied] Attacker=%s Target=%s Damage=%.2f"), *GetName(), *TargetActor->GetName(), AttackDamage);
+	return true;
 }
 
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const

@@ -327,3 +327,16 @@ HandleChanged
 - 공격이 빗나가면 `[Attack][TraceMiss]` 로그를 출력하고, 대상이 감지되면 `[Attack][TraceHit]` 로그를 출력하도록 했습니다.
 - Debug Draw를 통해 서버 기준 공격 판정 범위를 시각적으로 확인할 수 있도록 했습니다.
 - 이번 단계에서는 아직 데미지를 적용하지 않고, 서버가 공격 대상을 판정하는 구조까지만 구현했습니다.
+
+### Week 4 Day 4 - Server-authoritative Attack Damage
+
+- 서버 Trace 결과로 감지된 대상에게 데미지를 적용하는 흐름을 추가했습니다.
+- `AMPActionRPGSampleCharacter`에 `AttackDamage`를 추가했습니다.
+- Trace로 감지된 `HitActor`에서 `UMPHealthComponent`를 찾는 `ApplyAttackDamageToActor()` 함수를 추가했습니다.
+- 데미지 적용은 서버 권한에서만 실행되도록 `HasAuthority()`를 확인했습니다.
+- 자기 자신에게 데미지가 적용되지 않도록 방어 코드를 추가했습니다.
+- `HealthComponent`가 없는 대상에게는 데미지를 적용하지 않고 로그만 출력하도록 했습니다.
+- 이미 사망한 대상에게는 추가 데미지를 적용하지 않도록 했습니다.
+- 공격이 적중하면 서버에서 `HealthComponent::ApplyDamage()`를 호출하도록 연결했습니다.
+- HP 변화가 `CurrentHP` Replication, `OnRep_CurrentHP`, `OnHealthChanged` Delegate, `WBP_NetworkDebug` UI 갱신으로 이어지는 것을 확인했습니다.
+- Listen Server와 Client 양방향 공격 테스트에서 공격 대상의 HP UI가 감소하는 것을 확인했습니다.
