@@ -53,11 +53,21 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UMPHealthComponent> HealthComponent;
 
+	// Attack
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
 	float AttackCooldown = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
 	float AttackDuration = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackRange = 200.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	float AttackTraceRadius = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Debug")
+	bool bDrawAttackTrace = true;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack")
 	bool bIsAttacking = false;
@@ -95,6 +105,7 @@ protected:
 	bool CanAttack(FString& OutFailReason) const;
 	void HandleAttack();
 	void FinishAttack();
+	bool PerformAttackTrace(FHitResult& OutHit) const;
 
 public:
 	/** Returns CameraBoom subobject **/

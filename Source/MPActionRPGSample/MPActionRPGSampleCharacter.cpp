@@ -1,17 +1,19 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "MPActionRPGSampleCharacter.h"
-#include "Engine/LocalPlayer.h"
+#include "MPPlayerState.h"
+#include "Component/MPHealthComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/World.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "Component/MPHealthComponent.h"
-#include "MPPlayerState.h"
 #include "TimerManager.h"
 
 namespace
@@ -284,6 +286,20 @@ void AMPActionRPGSampleCharacter::HandleAttack()
 	const FString PlayerName = PS ? PS->GetPlayerName() : TEXT("Unknown");
 
 	UE_LOG(LogTemp, Warning, TEXT("[Attack][Started] Player=%s Character=%s Cooldown=%.2f Duration=%.2f"), *PlayerName, *GetName(), AttackCooldown, AttackDuration);	
+
+	FHitResult HitResult;
+	if (PerformAttackTrace(HitResult))
+	{
+		AActor* HitActor = HitResult.GetActor();
+		const FString HitActorName = HitActor ? HitActor->GetName() : TEXT("None");
+
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][TraceHit] Attacker=%s HitActor=%s HitLocation=%s"),
+			*GetName(), *HitActorName, *HitResult.ImpactPoint.ToString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("[Attack][TraceMiss] Attacker=%s Range=%.2f Radius=%.2f"), *GetName(), AttackRange, AttackTraceRadius);
+	}
 }
 
 void AMPActionRPGSampleCharacter::FinishAttack()
@@ -296,6 +312,45 @@ void AMPActionRPGSampleCharacter::FinishAttack()
 	bIsAttacking = false;
 
 	UE_LOG(LogTemp, Log, TEXT("[Attack][Finished] Character=%s"), *GetName());
+}
+
+bool AMPActionRPGSampleCharacter::PerformAttackTrace(FHitResult& OutHit) const
+{
+	if (!HasAuthority())
+	{
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	const FVector Start = GetActorLocation() + FVector(0.0f, 0.0f, BaseEyeHeight);
+	const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+	FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(AttackTrace), false, this);
+	QueryParams.AddIgnoredActor(this);
+
+	const FCollisionShape CollisionShape = FCollisionShape::MakeSphere(AttackTraceRadius);
+	const bool bHit = World->SweepSingleByChannel(OutHit, Start, End, FQuat::Identity, ECC_Pawn, CollisionShape, QueryParams);
+
+	if (bDrawAttackTrace)
+	{
+		const FColor DrawColor = bHit ? FColor::Red : FColor::Green;
+
+		DrawDebugLine(World, Start, End, DrawColor, false, 1.0f, 0, 2.0f);
+		DrawDebugSphere(World, Start, AttackTraceRadius, 12, DrawColor, false, 1.0f);
+		DrawDebugSphere(World, End, AttackTraceRadius, 12, DrawColor, false, 1.0f);
+
+		if (bHit)
+		{
+			DrawDebugSphere(World, OutHit.ImpactPoint, AttackTraceRadius, 12, FColor::Yellow, false, 1.0f);
+		}
+	}
+
+	return bHit && OutHit.GetActor();
 }
 
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const

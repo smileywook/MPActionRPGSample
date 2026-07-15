@@ -314,3 +314,16 @@ HandleChanged
 - 공격이 시작되면 서버에서 `HandleAttack()`이 실행되고, 일정 시간이 지난 뒤 `FinishAttack()`에서 공격 상태를 종료하도록 구성했습니다.
 - 공격 요청이 거절될 경우 `AlreadyAttacking`, `Cooldown`, `Dead` 등의 이유를 로그로 확인할 수 있도록 했습니다.
 - 이번 단계에서는 아직 Trace나 데미지 적용은 하지 않고, 서버 공격 검증과 기본 공격 상태만 정리했습니다.
+
+### Week 4 Day 3 - Server-side Attack Trace
+
+- 서버 기준으로 공격 판정을 수행하기 위해 `PerformAttackTrace()`를 추가했습니다.
+- `AMPActionRPGSampleCharacter`에 `AttackRange`, `AttackTraceRadius`, `bDrawAttackTrace`를 추가했습니다.
+- 공격이 시작되면 `HandleAttack()`에서 서버 권한으로 공격 Trace를 실행하도록 구성했습니다.
+- `SweepSingleByChannel`과 Sphere Collision Shape를 사용해 캐릭터 전방의 Pawn을 탐색하도록 했습니다.
+- Trace 시작 위치는 캐릭터 위치에 `BaseEyeHeight`를 더한 위치로 설정했습니다.
+- Trace 종료 위치는 캐릭터 전방 방향에 `AttackRange`를 곱해 계산했습니다.
+- `QueryParams.AddIgnoredActor(this)`를 사용해 자기 자신은 공격 판정에서 제외했습니다.
+- 공격이 빗나가면 `[Attack][TraceMiss]` 로그를 출력하고, 대상이 감지되면 `[Attack][TraceHit]` 로그를 출력하도록 했습니다.
+- Debug Draw를 통해 서버 기준 공격 판정 범위를 시각적으로 확인할 수 있도록 했습니다.
+- 이번 단계에서는 아직 데미지를 적용하지 않고, 서버가 공격 대상을 판정하는 구조까지만 구현했습니다.
