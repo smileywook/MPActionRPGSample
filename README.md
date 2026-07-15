@@ -74,7 +74,33 @@ UE5 기반 멀티플레이 액션 RPG 미니 샘플 프로젝트입니다.
   - 월드에 존재하는 실제 조작 대상
   - 이동, 전투, HP, 애니메이션 처리 예정
   
-  ### PlayerState Replication Flow
+- AMPActionRPGSampleCharacter
+ - 공격 입력 처리
+ - Server RPC 공격 요청
+ - 공격 가능 여부 검증
+ - 서버 기준 공격 Trace
+ - 공격 대상 HealthComponent 탐색
+ - 서버 데미지 적용 요청
+
+- UMPHealthComponent
+ - CurrentHP / MaxHP 관리
+ - 서버 권한 기반 ApplyDamage 처리
+ - CurrentHP Replication
+ - OnRep_CurrentHP 처리
+ - OnHealthChanged Delegate Broadcast
+ - bIsDead / OnDeath 처리
+
+- AMPPlayerController
+ - 로컬 UI 생성
+ - 현재 Pawn의 HealthComponent 이벤트 구독
+ - HP 변경 이벤트를 UI에 전달
+
+- UMPNetworkDebugWidget
+ - HP Text 표시
+ - HealthBar 표시
+ - Dead 상태 표시
+  
+ ### PlayerState Replication Flow
 
 PlayerDisplayName은 PlayerState에 저장하고 서버에서만 변경합니다.
 
@@ -340,3 +366,15 @@ HandleChanged
 - 공격이 적중하면 서버에서 `HealthComponent::ApplyDamage()`를 호출하도록 연결했습니다.
 - HP 변화가 `CurrentHP` Replication, `OnRep_CurrentHP`, `OnHealthChanged` Delegate, `WBP_NetworkDebug` UI 갱신으로 이어지는 것을 확인했습니다.
 - Listen Server와 Client 양방향 공격 테스트에서 공격 대상의 HP UI가 감소하는 것을 확인했습니다.
+
+### Week 4 Day 5 - Server RPC Attack Wrap-up
+
+- 4주차에서 구현한 Server RPC 기반 기본 공격 흐름을 최종 정리했습니다.
+- 공격 입력이 클라이언트에서 시작되고, Server RPC를 통해 서버 공격 처리로 전달되는 흐름을 정리했습니다.
+- 서버에서 `CanAttack()`을 통해 공격 가능 여부를 검증하는 구조를 정리했습니다.
+- `bIsAttacking`, `AttackCooldown`, `AttackDuration`, `LastAttackTime`을 사용해 공격 중복 요청과 쿨타임을 제한하는 흐름을 정리했습니다.
+- 서버 기준 `Sphere Sweep` Trace를 통해 공격 대상을 판정하는 구조를 정리했습니다.
+- Trace 결과로 감지된 대상의 `UMPHealthComponent`를 찾아 서버에서 `ApplyDamage()`를 호출하는 흐름을 정리했습니다.
+- HP 변경이 `CurrentHP` Replication, `OnRep_CurrentHP`, `OnHealthChanged` Delegate를 거쳐 UI에 반영되는 흐름을 정리했습니다.
+- Listen Server와 Client 양방향 공격 테스트를 통해 서버 권위 공격 흐름을 확인했습니다.
+- 허공 공격, 공격 연타, 쿨타임, 사망 상태 공격, 죽은 대상 추가 데미지 방지 케이스를 테스트했습니다.
