@@ -13,6 +13,7 @@ class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
 class UMPHealthComponent;
+class UMPSkillComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -52,6 +53,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UMPHealthComponent> HealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UMPSkillComponent> SkillComponent;
 
 	// Attack
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
@@ -122,5 +126,7 @@ public:
 
 public:
 	UMPHealthComponent* GetHealthComponent() const;
+
+	UMPSkillComponent* GetSkillComponent() const;
 };
 

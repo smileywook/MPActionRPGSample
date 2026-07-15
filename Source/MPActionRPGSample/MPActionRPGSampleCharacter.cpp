@@ -5,6 +5,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Component/MPHealthComponent.h"
+#include "Component/MPSkillComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
@@ -97,6 +98,7 @@ AMPActionRPGSampleCharacter::AMPActionRPGSampleCharacter()
 
 	bReplicates = true;
 	HealthComponent = CreateDefaultSubobject<UMPHealthComponent>(TEXT("HealthComponent"));
+	SkillComponent = CreateDefaultSubobject<UMPSkillComponent>(TEXT("SkillComponent"));
 }
 
 void AMPActionRPGSampleCharacter::BeginPlay()
@@ -427,4 +429,9 @@ bool AMPActionRPGSampleCharacter::IsCharacterDead() const
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const
 {
 	return HealthComponent;
+}
+
+UMPSkillComponent* AMPActionRPGSampleCharacter::GetSkillComponent() const
+{
+	return SkillComponent;
 }

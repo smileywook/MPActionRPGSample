@@ -436,3 +436,12 @@ HandleChanged
 - HealthComponent에는 OnRespawn Delegate를 추가하여, bIsDead가 false로 복제되었을 때 클라이언트에서도 UI가 Alive 상태로 복구되도록 했습니다.
 - PlayerController는 OnHealthChanged, OnDeath, OnRespawn을 구독하고, HealthText / HealthBar / DeathText UI를 갱신합니다.
 - 이번 주차를 통해 피격 → 사망 → 입력 제한 → 리스폰 요청 → 서버 리스폰 처리 → UI 복구 흐름을 하나의 멀티플레이 패턴으로 정리했습니다.
+
+## Week 6 Day 1 - SkillComponent 기본 구조 추가
+
+- 스킬 기능을 Character에서 분리하기 위한 `UMPSkillComponent`를 추가했다.
+- 기존 기본 공격은 Character에 유지하고, 스킬 사용 요청 / 서버 검증 / 쿨다운 / 판정 흐름은 SkillComponent에서 담당하도록 구조를 분리할 예정이다.
+- `UMPSkillComponent`는 ActorComponent 기반으로 생성했으며, 이후 서버 권위 스킬 상태를 다룰 수 있도록 `SetIsReplicatedByDefault(true)`를 설정했다.
+- Character에 SkillComponent를 추가하고 `CreateDefaultSubobject`로 생성되도록 연결했다.
+- Listen Server / Client 실행 시 각 Pawn에서 SkillComponent BeginPlay 로그가 출력되는 것을 확인했다.
+- 오늘은 실제 스킬 입력, 데미지, 쿨다운은 구현하지 않고 6주차 스킬 시스템의 기반 구조만 준비했다.
