@@ -378,3 +378,16 @@ HandleChanged
 - HP 변경이 `CurrentHP` Replication, `OnRep_CurrentHP`, `OnHealthChanged` Delegate를 거쳐 UI에 반영되는 흐름을 정리했습니다.
 - Listen Server와 Client 양방향 공격 테스트를 통해 서버 권위 공격 흐름을 확인했습니다.
 - 허공 공격, 공격 연타, 쿨타임, 사망 상태 공격, 죽은 대상 추가 데미지 방지 케이스를 테스트했습니다.
+
+### Week 5 Day 1 - Hit / Death State Flow
+
+- 5주차 피격 / 사망 / 리스폰 흐름의 첫 단계로, 기존 HealthComponent 기반 피격 및 사망 상태 흐름을 점검했습니다.
+- 현재 구조는 이미 CurrentHP, bIsDead, OnHealthChanged, OnDeath 흐름을 가지고 있으므로 전체 구조를 새로 작성하지 않고, 기존 코드 기준으로 필요한 로그를 보강했습니다.
+- ApplyDamage에서 서버 권한으로만 데미지를 적용하고, 사망 상태이거나 잘못된 데미지 값일 경우 무시하도록 확인했습니다.
+- Heal 역시 서버 권한에서만 동작하며, 사망 상태에서는 일반 Heal로 부활하지 않도록 확인했습니다.
+- SetCurrentHP에서 HP Clamp, 변경 여부 확인, OnHealthChanged Broadcast, HP 0 도달 시 HandleDeath 호출 흐름을 다시 확인했습니다.
+- HandleDeath에서 bIsDead를 true로 확정하고 OnDeath Delegate를 Broadcast하도록 정리했습니다.
+- CurrentHP Replication 이후 OnRep_CurrentHP를 통해 HP UI가 갱신되는 흐름을 확인했습니다.
+- bIsDead Replication 이후 OnRep_IsDead를 통해 클라이언트에서도 OnDeath 흐름이 실행되고, DeathText / State: Dead UI가 갱신되는 것을 확인할 예정입니다.
+- 죽은 대상에게 추가 데미지가 적용되지 않고, 죽은 캐릭터가 공격할 수 없는 기존 4주차 공격 방어 흐름도 함께 확인했습니다.
+- 일반 Heal은 부활 처리가 아니며, 부활은 이후 Respawn 전용 흐름에서 처리할 예정입니다.
