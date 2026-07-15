@@ -425,3 +425,14 @@ HandleChanged
 - RespawnControlledPawn에서는 서버 권한으로 Pawn을 PlayerStart 위치로 이동시키고, HealthComponent의 ResetForRespawn을 호출했습니다.
 - 이를 통해 Client는 리스폰을 요청만 하고, HP 복구 / 사망 상태 해제 / 위치 재배치는 모두 서버에서 처리되도록 구성했습니다.
 - 리스폰 후 HealthText / HealthBar가 MaxHP로 복구되고, DeathText 또는 State: Dead UI가 해제되며, 이동 / 점프 / 공격 입력이 다시 가능한 것을 확인했습니다.
+
+### Week 5 Day 5 - Hit / Death / Respawn Flow Summary
+
+- 5주차 5일차에서는 피격 / 사망 / 리스폰 흐름을 최종 정리했습니다.
+- 1일차에서는 HealthComponent 기반 피격 및 사망 상태 흐름을 점검하고, ApplyDamage / Heal / HP 변경 / 사망 / OnRep 로그를 보강했습니다.
+- 2일차에서는 bIsDead 상태를 기준으로 사망 중 이동 / 점프 / 공격 입력을 제한했습니다.
+- 3일차에서는 MPPlayerController에 TestRespawn Exec 명령과 ServerRequestRespawn Server RPC를 추가하여, 클라이언트가 서버에 리스폰을 요청하는 흐름을 만들었습니다.
+- 4일차에서는 서버에서 실제 리스폰 처리를 수행하도록 연결했습니다. 서버는 PlayerStart 위치를 찾아 Pawn을 이동시키고, HealthComponent::ResetForRespawn을 통해 CurrentHP를 MaxHP로 복구하고 bIsDead를 false로 되돌립니다.
+- HealthComponent에는 OnRespawn Delegate를 추가하여, bIsDead가 false로 복제되었을 때 클라이언트에서도 UI가 Alive 상태로 복구되도록 했습니다.
+- PlayerController는 OnHealthChanged, OnDeath, OnRespawn을 구독하고, HealthText / HealthBar / DeathText UI를 갱신합니다.
+- 이번 주차를 통해 피격 → 사망 → 입력 제한 → 리스폰 요청 → 서버 리스폰 처리 → UI 복구 흐름을 하나의 멀티플레이 패턴으로 정리했습니다.
