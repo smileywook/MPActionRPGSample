@@ -92,6 +92,26 @@ void UMPHealthComponent::Heal(float HealAmount)
     UE_LOG(LogTemp, Log, TEXT("[Health][HealApplied] Owner=%s Heal=%.2f HP=%.1f->%.1f"), *GetNameSafe(GetOwner()), HealAmount, OldHP, CurrentHP);
 }
 
+void UMPHealthComponent::ResetForRespawn()
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
+    if (!bIsDead)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[Health][RespawnRejected] Owner=%s Reason=NotDead"), *GetNameSafe(GetOwner()));
+        return;
+    }
+
+    bIsDead = false;
+    SetCurrentHP(MaxHP);
+    OnRespawn.Broadcast();
+
+    UE_LOG(LogTemp, Warning, TEXT("[Health][Respawned] Owner=%s HP=%.1f bIsDead=false"), *GetNameSafe(GetOwner()), CurrentHP);
+}
+
 void UMPHealthComponent::SetCurrentHP(float NewHP)
 {
     const float OldHP = CurrentHP;
@@ -145,5 +165,8 @@ void UMPHealthComponent::OnRep_IsDead()
     if (bIsDead)
     {
         OnDeath.Broadcast();
+        return;
     }
+
+    OnRespawn.Broadcast();
 }

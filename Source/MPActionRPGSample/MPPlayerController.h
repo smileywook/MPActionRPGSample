@@ -9,6 +9,7 @@
 class AMPPlayerState;
 class UMPHealthComponent;
 class UMPNetworkDebugWidget;
+class AMPActionRPGSampleCharacter;
 
 /**
  * 
@@ -45,6 +46,8 @@ protected:
 	void HandleHealthChanged(float CurrentHP, float MaxHP);
 	UFUNCTION()
 	void HandleDeath();
+	UFUNCTION()
+	void HandleRespawn();
 
 	UFUNCTION(Server, Reliable)
 	void ServerRequestApplyTestDamage(float DamageAmount);
@@ -75,6 +78,8 @@ private:
 	void ApplyDamageToControlledPawn(float DamageAmount);	
 	void HealControlledPawn(float HealAmount);
 	void RequestRespawnControlledPawn();
+	void RespawnControlledPawn(AMPActionRPGSampleCharacter* MPCharacter, UMPHealthComponent* HealthComponent);
+	bool MovePawnToRespawnLocation(AMPActionRPGSampleCharacter* MPCharacter);
 
 	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
 	void UpdateDeathDebugUI(bool bDead);

@@ -3,9 +3,11 @@
 
 #include "MPPlayerController.h"
 #include "MPActionRPGSampleCharacter.h"
-#include "Component/MPHealthComponent.h"
-#include "UI/MPNetworkDebugWidget.h"
 #include "MPPlayerState.h"
+#include "Component/MPHealthComponent.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "UI/MPNetworkDebugWidget.h"
 
 namespace
 {
@@ -174,6 +176,7 @@ void AMPPlayerController::TryBindHealthComponent()
 	BoundHealthComponent = HealthComponent;
 	BoundHealthComponent->OnHealthChanged.AddUniqueDynamic(this, &AMPPlayerController::HandleHealthChanged);
 	BoundHealthComponent->OnDeath.AddUniqueDynamic(this, &AMPPlayerController::HandleDeath);
+	BoundHealthComponent->OnRespawn.AddUniqueDynamic(this, &AMPPlayerController::HandleRespawn);
 
 	HandleHealthChanged(BoundHealthComponent->GetCurrentHP(), BoundHealthComponent->GetMaxHP());
 	UpdateDeathDebugUI(BoundHealthComponent->IsDead());
@@ -320,6 +323,68 @@ void AMPPlayerController::RequestRespawnControlledPawn()
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("[Respawn][Accepted] Controller=%s Pawn=%s"), *GetName(), *GetNameSafe(MPCharacter));
+
+	RespawnControlledPawn(MPCharacter, HealthComponent);
+}
+
+void AMPPlayerController::RespawnControlledPawn(AMPActionRPGSampleCharacter* MPCharacter, UMPHealthComponent* HealthComponent)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	if (!MPCharacter || !HealthComponent)
+	{
+		return;
+	}
+
+	if (!MovePawnToRespawnLocation(MPCharacter))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Respawn][Failed] Controller=%s Pawn=%s Reason=MoveFailed"), *GetName(), *GetNameSafe(MPCharacter));
+		return;
+	}
+
+	HealthComponent->ResetForRespawn();
+
+	UE_LOG(LogTemp, Warning, TEXT("[Respawn][Completed] Controller=%s Pawn=%s HP=%.1f/%.1f"), *GetName(), *GetNameSafe(MPCharacter), HealthComponent->GetCurrentHP(), HealthComponent->GetMaxHP());
+}
+
+bool AMPPlayerController::MovePawnToRespawnLocation(AMPActionRPGSampleCharacter* MPCharacter)
+{
+	if (!HasAuthority() || !MPCharacter)
+	{
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	AGameModeBase* GameMode = World->GetAuthGameMode();
+	AActor* PlayerStartSpot = GameMode ? GameMode->FindPlayerStart(this) : nullptr;
+	if (!PlayerStartSpot)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Respawn][MoveFailed] Controller=%s Reason=NoPlayerStart"), *GetName());
+		return false;
+	}
+
+	const FVector RespawnLocation = PlayerStartSpot->GetActorLocation();
+	const FRotator RespawnRotation = PlayerStartSpot->GetActorRotation();
+
+	if (UCharacterMovementComponent* MovementComponent = MPCharacter->GetCharacterMovement())
+	{
+		MovementComponent->StopMovementImmediately();
+	}
+
+	MPCharacter->SetActorLocationAndRotation(RespawnLocation, RespawnRotation, false, nullptr, ETeleportType::TeleportPhysics);
+	SetControlRotation(RespawnRotation);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Respawn][Moved] Controller=%s Pawn=%s Location=%s Rotation=%s"), *GetName(), *GetNameSafe(MPCharacter), *RespawnLocation.ToString(), *RespawnRotation.ToString());
+
+	return true;
 }
 
 void AMPPlayerController::HandleDeath()
@@ -327,6 +392,18 @@ void AMPPlayerController::HandleDeath()
 	UE_LOG(LogTemp, Log, TEXT("PlayerController Death Event Received"));
 
 	UpdateDeathDebugUI(true);
+}
+
+void AMPPlayerController::HandleRespawn()
+{
+	UE_LOG(LogTemp, Log, TEXT("[PlayerController] Respawn Event Received"));
+
+	if (BoundHealthComponent)
+	{
+		HandleHealthChanged(BoundHealthComponent->GetCurrentHP(), BoundHealthComponent->GetMaxHP());
+	}
+
+	UpdateDeathDebugUI(false);
 }
 
 void AMPPlayerController::UpdateDeathDebugUI(bool bDead)
@@ -348,5 +425,6 @@ void AMPPlayerController::UnbindHealthComponent()
 
 	BoundHealthComponent->OnHealthChanged.RemoveDynamic(this, &AMPPlayerController::HandleHealthChanged);
 	BoundHealthComponent->OnDeath.RemoveDynamic(this, &AMPPlayerController::HandleDeath);
+	BoundHealthComponent->OnRespawn.RemoveDynamic(this, &AMPPlayerController::HandleRespawn);
 	BoundHealthComponent = nullptr;
 }

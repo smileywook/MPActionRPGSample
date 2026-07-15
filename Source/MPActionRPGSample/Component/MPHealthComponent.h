@@ -6,6 +6,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChanged, float, CurrentHP, float, MaxHP);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRespawn);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class MPACTIONRPGSAMPLE_API UMPHealthComponent : public UActorComponent
@@ -15,8 +16,12 @@ class MPACTIONRPGSAMPLE_API UMPHealthComponent : public UActorComponent
 public:
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnHealthChanged OnHealthChanged;
+
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnDeath OnDeath;
+
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnRespawn OnRespawn;
 
 protected:
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHP, EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
@@ -47,6 +52,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Health")
     void Heal(float HealAmount);
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void ResetForRespawn();
 
 protected:
     virtual void BeginPlay() override;

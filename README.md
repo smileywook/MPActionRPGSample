@@ -413,3 +413,15 @@ HandleChanged
 - 살아있는 상태에서 리스폰을 요청하면 Reason=NotDead로 거절되도록 했습니다.
 - 사망 상태에서 리스폰을 요청하면 Respawn Accepted 로그가 출력되도록 했습니다.
 - 오늘은 리스폰 요청 흐름만 검증하고, 실제 HP 초기화 / 위치 재배치 / UI 복구는 다음 일차에서 처리할 예정입니다.
+
+### Week 5 Day 4 - Server Respawn Process
+
+- 5주차 4일차에서는 3일차에서 만든 리스폰 요청 흐름에 실제 서버 리스폰 처리를 연결했습니다.
+- HealthComponent에 OnRespawn Delegate와 ResetForRespawn 함수를 추가했습니다.
+- ResetForRespawn에서는 서버 권한에서만 bIsDead를 false로 되돌리고, CurrentHP를 MaxHP로 복구하도록 구성했습니다.
+- OnRep_IsDead에서 bIsDead가 true로 복제되면 OnDeath를 Broadcast하고, false로 복제되면 OnRespawn을 Broadcast하도록 수정했습니다.
+- PlayerController는 OnRespawn 이벤트를 구독하고, HandleRespawn에서 Health UI를 갱신하고 Dead 상태 UI를 해제하도록 했습니다.
+- RequestRespawnControlledPawn에서 사망 상태 검증을 통과하면 RespawnControlledPawn을 호출하도록 변경했습니다.
+- RespawnControlledPawn에서는 서버 권한으로 Pawn을 PlayerStart 위치로 이동시키고, HealthComponent의 ResetForRespawn을 호출했습니다.
+- 이를 통해 Client는 리스폰을 요청만 하고, HP 복구 / 사망 상태 해제 / 위치 재배치는 모두 서버에서 처리되도록 구성했습니다.
+- 리스폰 후 HealthText / HealthBar가 MaxHP로 복구되고, DeathText 또는 State: Dead UI가 해제되며, 이동 / 점프 / 공격 입력이 다시 가능한 것을 확인했습니다.
