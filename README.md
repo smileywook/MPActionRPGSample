@@ -391,3 +391,14 @@ HandleChanged
 - bIsDead Replication 이후 OnRep_IsDead를 통해 클라이언트에서도 OnDeath 흐름이 실행되고, DeathText / State: Dead UI가 갱신되는 것을 확인할 예정입니다.
 - 죽은 대상에게 추가 데미지가 적용되지 않고, 죽은 캐릭터가 공격할 수 없는 기존 4주차 공격 방어 흐름도 함께 확인했습니다.
 - 일반 Heal은 부활 처리가 아니며, 부활은 이후 Respawn 전용 흐름에서 처리할 예정입니다.
+
+### Week 5 Day 2 - Block Input While Dead
+
+- 5주차 2일차에서는 사망 상태를 기준으로 캐릭터 입력 제한 흐름을 정리했습니다.
+- 1일차에서 확정한 bIsDead 상태를 입력 처리에도 사용하여, 죽은 캐릭터가 이동 / 점프 / 공격을 수행하지 못하도록 구성했습니다.
+- 기존 JumpAction이 ACharacter::Jump에 직접 바인딩되어 있어 사망 상태를 검사하기 어려웠기 때문에, StartJump / StopJump 함수를 추가하고 JumpAction 바인딩을 해당 함수로 변경했습니다.
+- Move 함수 시작 지점에서 IsCharacterDead를 확인하여 사망 상태에서는 AddMovementInput이 호출되지 않도록 했습니다.
+- Attack 함수에서도 IsCharacterDead를 먼저 확인하여 사망 상태에서는 ServerStartAttack RPC를 보내지 않도록 정리했습니다.
+- 단, 서버 권위 검증을 유지하기 위해 CanAttack의 Dead 검사는 그대로 남겨두었습니다.
+- 이를 통해 클라이언트 입력 단계와 서버 검증 단계 양쪽에서 사망 상태 입력이 제한되도록 구성했습니다.
+- Look 입력은 오늘 범위에서는 제한하지 않고, 죽은 상태에서도 카메라 확인은 가능하도록 유지했습니다.

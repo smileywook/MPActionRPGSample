@@ -87,13 +87,14 @@ public:
 	
 
 protected:
-
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+
+	void StartJump();
+	void StopJump();
 
 protected:
 	virtual void NotifyControllerChanged() override;
@@ -110,6 +111,8 @@ protected:
 	void FinishAttack();
 	bool PerformAttackTrace(FHitResult& OutHit) const;
 	bool ApplyAttackDamageToActor(AActor* TargetActor);
+
+	bool IsCharacterDead() const;
 
 public:
 	/** Returns CameraBoom subobject **/

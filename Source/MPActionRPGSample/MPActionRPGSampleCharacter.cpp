@@ -135,8 +135,8 @@ void AMPActionRPGSampleCharacter::SetupPlayerInputComponent(UInputComponent* Pla
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AMPActionRPGSampleCharacter::StartJump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AMPActionRPGSampleCharacter::StopJump);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMPActionRPGSampleCharacter::Move);
@@ -157,6 +157,11 @@ void AMPActionRPGSampleCharacter::SetupPlayerInputComponent(UInputComponent* Pla
 
 void AMPActionRPGSampleCharacter::Move(const FInputActionValue& Value)
 {
+	if (IsCharacterDead())
+	{
+		return;
+	}
+
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -191,10 +196,32 @@ void AMPActionRPGSampleCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void AMPActionRPGSampleCharacter::StartJump()
+{
+	if (IsCharacterDead())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Input][JumpRejected] Character=%s Reason=Dead"), *GetName());
+		return;
+	}
+
+	Jump();
+}
+
+void AMPActionRPGSampleCharacter::StopJump()
+{
+	StopJumping();
+}
+
 void AMPActionRPGSampleCharacter::Attack()
 {
 	if (!IsLocallyControlled())
 	{
+		return;
+	}
+
+	if (IsCharacterDead())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Attack][InputRejected] Character=%s Reason=Dead"), *GetName());
 		return;
 	}
 
@@ -390,6 +417,11 @@ bool AMPActionRPGSampleCharacter::ApplyAttackDamageToActor(AActor* TargetActor)
 
 	UE_LOG(LogTemp, Warning, TEXT("[Attack][DamageApplied] Attacker=%s Target=%s Damage=%.2f"), *GetName(), *TargetActor->GetName(), AttackDamage);
 	return true;
+}
+
+bool AMPActionRPGSampleCharacter::IsCharacterDead() const
+{
+	return HealthComponent && HealthComponent->IsDead();
 }
 
 UMPHealthComponent* AMPActionRPGSampleCharacter::GetHealthComponent() const
