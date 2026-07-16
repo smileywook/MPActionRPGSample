@@ -6,6 +6,9 @@
 #include "Components/ActorComponent.h"
 #include "MPSkillComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillCooldownChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSkillActivated);
+
 USTRUCT(BlueprintType)
 struct FMPSkillData
 {
@@ -36,6 +39,13 @@ class MPACTIONRPGSAMPLE_API UMPSkillComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+public:
+	UPROPERTY(BlueprintAssignable, Category = "Skill")
+	FOnSkillCooldownChanged OnSkillCooldownChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Skill")
+	FOnSkillActivated OnSkillActivated;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
 	FMPSkillData SkillData;
@@ -47,6 +57,7 @@ protected:
 	bool bDebugSkillLog = true;
 
 private:
+	UPROPERTY(ReplicatedUsing = OnRep_CooldownEndServerTime)
 	float CooldownEndServerTime = 0.0f;
 
 public:	
@@ -58,16 +69,29 @@ public:
 	bool HasSkillAuthority() const;
 	bool IsSkillDataValid() const;
 
+	float GetRemainingCooldown() const;
+	float GetCooldownDuration() const;
+	bool IsSkillOnCooldown() const;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
+	UFUNCTION()
+	void OnRep_CooldownEndServerTime();
+
 	UFUNCTION(Server, Reliable)
 	void ServerUseSkill();
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSkillActivated();
+
 	bool CanUseSkill(FString& OutReason) const;
 	void StartSkillCooldown();
+	void NotifySkillCooldownChanged();
 	float GetCurrentServerTime() const;
 	int32 PerformSkillTrace();
 	bool ApplySkillDamageToActor(AActor* TargetActor);

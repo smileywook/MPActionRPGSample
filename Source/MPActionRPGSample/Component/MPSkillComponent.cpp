@@ -5,6 +5,8 @@
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UMPSkillComponent::UMPSkillComponent()
@@ -26,6 +28,19 @@ void UMPSkillComponent::BeginPlay()
 
 	PrintSkillLog(FString::Printf(TEXT("BeginPlay Owner=%s Authority=%s Role=%d"), *GetNameSafe(OwnerActor), bHasAuthority ? TEXT("true") : TEXT("false"), static_cast<int32>(OwnerRole)));
 	PrintSkillDataLog();
+}
+
+void UMPSkillComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(UMPSkillComponent, CooldownEndServerTime, COND_OwnerOnly);
+}
+
+void UMPSkillComponent::OnRep_CooldownEndServerTime()
+{
+	PrintSkillLog(FString::Printf(TEXT("OnRep_CooldownEndServerTime EndTime=%.2f Remaining=%.2f"), CooldownEndServerTime, GetRemainingCooldown()));
+	NotifySkillCooldownChanged();
 }
 
 void UMPSkillComponent::RequestUseSkill()
@@ -51,6 +66,7 @@ void UMPSkillComponent::ServerUseSkill_Implementation()
 	}
 
 	StartSkillCooldown();
+	MulticastSkillActivated();
 
 	PrintSkillLog(FString::Printf(TEXT("ServerUseSkill Accepted Skill=%s Owner=%s CooldownEnd=%.2f"), *SkillData.SkillId.ToString(), *GetNameSafe(GetOwner()), CooldownEndServerTime));
 
@@ -106,10 +122,57 @@ bool UMPSkillComponent::CanUseSkill(FString& OutReason) const
 	return true;
 }
 
+void UMPSkillComponent::StartSkillCooldown()
+{
+	CooldownEndServerTime = GetCurrentServerTime() + SkillData.Cooldown;
+
+	PrintSkillLog(FString::Printf(TEXT("Cooldown Started EndTime=%.2f Duration=%.2f Authority=%s"), CooldownEndServerTime, SkillData.Cooldown, HasSkillAuthority() ? TEXT("true") : TEXT("false")));
+
+	NotifySkillCooldownChanged(); 
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		OwnerActor->ForceNetUpdate();
+	}
+}
+
+void UMPSkillComponent::NotifySkillCooldownChanged()
+{
+	PrintSkillLog(FString::Printf(TEXT("NotifySkillCooldownChanged Owner=%s Remaining=%.2f"), *GetNameSafe(GetOwner()), GetRemainingCooldown()));
+	OnSkillCooldownChanged.Broadcast();
+}
+
+void UMPSkillComponent::MulticastSkillActivated_Implementation()
+{
+	PrintSkillLog(FString::Printf(TEXT("SkillActivated Cosmetic Owner=%s Skill=%s"), *GetNameSafe(GetOwner()), *SkillData.SkillId.ToString()));
+	OnSkillActivated.Broadcast();
+}
+
 float UMPSkillComponent::GetCurrentServerTime() const
 {
 	const UWorld* World = GetWorld();
-	return World ? World->GetTimeSeconds() : 0.0f;
+	if (!World)
+	{
+		return 0.0f;
+	}
+
+	const AGameStateBase* GameState = World->GetGameState();
+	return GameState ? GameState->GetServerWorldTimeSeconds() : World->GetTimeSeconds();
+}
+
+float UMPSkillComponent::GetRemainingCooldown() const
+{
+	return FMath::Max(0.0f, CooldownEndServerTime - GetCurrentServerTime());
+}
+
+float UMPSkillComponent::GetCooldownDuration() const
+{
+	return SkillData.Cooldown;
+}
+
+bool UMPSkillComponent::IsSkillOnCooldown() const
+{
+	return GetRemainingCooldown() > KINDA_SMALL_NUMBER;
 }
 
 int32 UMPSkillComponent::PerformSkillTrace()
@@ -219,11 +282,6 @@ bool UMPSkillComponent::ApplySkillDamageToActor(AActor* TargetActor)
 	PrintSkillLog(FString::Printf(TEXT("ApplySkillDamage Target=%s Damage=%.1f"), *GetNameSafe(TargetActor), SkillData.Damage));
 
 	return true;
-}
-
-void UMPSkillComponent::StartSkillCooldown()
-{
-	CooldownEndServerTime = GetCurrentServerTime() + SkillData.Cooldown;
 }
 
 const FMPSkillData& UMPSkillComponent::GetSkillData() const
