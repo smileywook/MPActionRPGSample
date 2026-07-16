@@ -5,9 +5,13 @@
 #include "MPActionRPGSampleCharacter.h"
 #include "MPPlayerState.h"
 #include "Component/MPHealthComponent.h"
+#include "Component/MPSkillComponent.h"
+#include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UI/MPNetworkDebugWidget.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -57,6 +61,9 @@ void AMPPlayerController::BeginPlay()
 		if (NetworkDebugWidget)
 		{
 			NetworkDebugWidget->AddToViewport();
+
+			SkillCooldownText = Cast<UTextBlock>(NetworkDebugWidget->GetWidgetFromName(TEXT("SkillCooldownText")));
+			SkillCooldownBar = Cast<UProgressBar>(NetworkDebugWidget->GetWidgetFromName(TEXT("SkillCooldownBar")));
 		}
 	}
 
@@ -66,6 +73,7 @@ void AMPPlayerController::BeginPlay()
 void AMPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	UnbindHealthComponent();
+	UnbindSkillComponent();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -75,11 +83,13 @@ void AMPPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	TryBindHealthComponent();
+	TryBindSkillComponent();
 }
 
 void AMPPlayerController::OnUnPossess()
 {
 	UnbindHealthComponent();
+	UnbindSkillComponent();
 
 	Super::OnUnPossess();
 }
@@ -93,6 +103,7 @@ void AMPPlayerController::OnRep_PlayerState()
 	TryBindPlayerStateEvents();
 
 	TryBindHealthComponent();
+	TryBindSkillComponent();
 }
 
 void AMPPlayerController::OnRep_Pawn()
@@ -100,6 +111,7 @@ void AMPPlayerController::OnRep_Pawn()
 	Super::OnRep_Pawn();
 
 	TryBindHealthComponent();
+	TryBindSkillComponent();
 }
 
 void AMPPlayerController::TryBindPlayerStateEvents()
@@ -428,3 +440,120 @@ void AMPPlayerController::UnbindHealthComponent()
 	BoundHealthComponent->OnRespawn.RemoveDynamic(this, &AMPPlayerController::HandleRespawn);
 	BoundHealthComponent = nullptr;
 }
+
+void AMPPlayerController::TryBindSkillComponent()
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	AMPActionRPGSampleCharacter* MPCharacter = Cast<AMPActionRPGSampleCharacter>(GetPawn());
+	if (!MPCharacter)
+	{
+		return;
+	}
+
+	UMPSkillComponent* SkillComponent = MPCharacter->GetSkillComponent();
+	if (!SkillComponent)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[SkillUI] BindSkillComponent Controller=%s Component=%s"), *GetNameSafe(this), *GetNameSafe(SkillComponent));
+
+
+	if (BoundSkillComponent == SkillComponent)
+	{
+		HandleSkillCooldownChanged();
+		return;
+	}
+
+	UnbindSkillComponent();
+
+	BoundSkillComponent = SkillComponent;
+	SkillComponent->OnSkillCooldownChanged.AddDynamic(this, &AMPPlayerController::HandleSkillCooldownChanged);
+
+	HandleSkillCooldownChanged();
+}
+
+void AMPPlayerController::HandleSkillCooldownChanged()
+{
+	if (!IsLocalController())
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[SkillUI] HandleSkillCooldownChanged Controller=%s Component=%s"), *GetNameSafe(this), *GetNameSafe(BoundSkillComponent.Get()));
+
+	GetWorldTimerManager().ClearTimer(SkillCooldownUITimerHandle);
+	UpdateSkillCooldownUI();
+
+	const UMPSkillComponent* SkillComponent = BoundSkillComponent.Get();
+	if (!SkillComponent || !SkillComponent->IsSkillOnCooldown())
+	{
+		return;
+	}
+
+	GetWorldTimerManager().SetTimer(SkillCooldownUITimerHandle, this, &AMPPlayerController::UpdateSkillCooldownUI, 0.1f, true);
+}
+
+void AMPPlayerController::UpdateSkillCooldownUI()
+{
+	UMPSkillComponent* SkillComponent = BoundSkillComponent.Get();
+	if (!SkillComponent)
+	{
+		GetWorldTimerManager().ClearTimer(SkillCooldownUITimerHandle);
+		return;
+	}
+
+	const float RemainingCooldown = SkillComponent->GetRemainingCooldown();
+	const float CooldownDuration = SkillComponent->GetCooldownDuration();
+	const FString DisplayName = SkillComponent->GetSkillData().DisplayName;
+	const bool bIsOnCooldown = RemainingCooldown > KINDA_SMALL_NUMBER;
+
+	if (SkillCooldownText.IsValid())
+	{
+		const FString CooldownText = bIsOnCooldown
+			? FString::Printf(TEXT("%s: %.1fs"), *DisplayName, RemainingCooldown)
+			: FString::Printf(TEXT("%s: Ready"), *DisplayName);
+
+		SkillCooldownText->SetText(FText::FromString(CooldownText));
+	}
+
+	if (SkillCooldownBar.IsValid())
+	{
+		const float CooldownPercent = CooldownDuration > KINDA_SMALL_NUMBER
+			? 1.0f - FMath::Clamp(RemainingCooldown / CooldownDuration, 0.0f, 1.0f)
+			: 1.0f;
+
+		SkillCooldownBar->SetPercent(CooldownPercent);
+	}
+
+	if (!bIsOnCooldown)
+	{
+		GetWorldTimerManager().ClearTimer(SkillCooldownUITimerHandle);
+	}
+}
+
+void AMPPlayerController::UnbindSkillComponent()
+{
+	if (UMPSkillComponent* SkillComponent = BoundSkillComponent.Get())
+	{
+		SkillComponent->OnSkillCooldownChanged.RemoveDynamic(this, &AMPPlayerController::HandleSkillCooldownChanged);
+	}
+
+	GetWorldTimerManager().ClearTimer(SkillCooldownUITimerHandle);
+	BoundSkillComponent.Reset();
+
+	if (SkillCooldownText.IsValid())
+	{
+		SkillCooldownText->SetText(FText::FromString(TEXT("Ground Slash: Ready")));
+	}
+
+	if (SkillCooldownBar.IsValid())
+	{
+		SkillCooldownBar->SetPercent(1.0f);
+	}
+}
+

@@ -10,6 +10,9 @@ class AMPPlayerState;
 class UMPHealthComponent;
 class UMPNetworkDebugWidget;
 class AMPActionRPGSampleCharacter;
+class UMPSkillComponent;
+class UProgressBar;
+class UTextBlock;
 
 /**
  * 
@@ -32,6 +35,11 @@ protected:
 private:
 	UPROPERTY()
 	TObjectPtr<AMPPlayerState> CachedMPPlayerState;
+
+	TWeakObjectPtr<UMPSkillComponent> BoundSkillComponent;
+	TWeakObjectPtr<UTextBlock> SkillCooldownText;
+	TWeakObjectPtr<UProgressBar> SkillCooldownBar;
+	FTimerHandle SkillCooldownUITimerHandle;
 
 public:
 	UFUNCTION(Exec)
@@ -59,6 +67,9 @@ protected:
 private:
 	UFUNCTION()
 	void HandlePlayerDisplayNameChanged(const FString& NewDisplayName);
+
+	UFUNCTION()
+	void HandleSkillCooldownChanged();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -83,4 +94,9 @@ private:
 
 	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
 	void UpdateDeathDebugUI(bool bDead);
+
+	void TryBindSkillComponent();
+	void UnbindSkillComponent();
+
+	void UpdateSkillCooldownUI();
 };
