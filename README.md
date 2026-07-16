@@ -476,3 +476,15 @@ HandleChanged
 - SkillComponent는 CurrentHP를 직접 수정하지 않고 HealthComponent의 기존 서버 데미지 처리 함수를 사용한다.
 - 스킬 데미지 이후 CurrentHP Replication → OnRep → Delegate → PlayerController → UI 갱신 흐름이 기존 HealthComponent 구조를 통해 재사용되는 것을 확인했다.
 - Listen Server와 Client 양쪽에서 Ground Slash의 정상 Hit, Miss, 사거리 밖 대상, 쿨다운 중 재사용, 사망 사용자, 사망 대상, 리스폰 이후 재피격을 테스트했다.
+
+## Week 6 Day 5 - 서버 쿨다운 동기화와 UI 표시
+
+- 서버가 관리하는 `CooldownEndServerTime`을 Replicated 상태로 변경하고, 소유 플레이어에게만 전달되도록 `COND_OwnerOnly`를 적용했다.
+- 클라이언트는 로컬 시간을 임의로 사용하는 대신 `GameStateBase::GetServerWorldTimeSeconds`를 통해 동기화된 서버 시간을 기준으로 남은 쿨다운을 계산한다.
+- `OnRep_CooldownEndServerTime → OnSkillCooldownChanged → PlayerController → WBP_NetworkDebug` 흐름으로 쿨다운 UI가 갱신되도록 구성했다.
+- 서버는 쿨다운 종료 시각만 한 번 복제하고, 클라이언트는 로컬 UI Timer를 사용해 남은 시간과 ProgressBar를 갱신한다.
+- Listen Server의 로컬 Pawn은 OnRep이 호출되지 않으므로 서버가 쿨다운을 시작할 때 Delegate를 직접 Broadcast하도록 처리했다.
+- Ground Slash 사용이 서버에서 승인되면 `MulticastSkillActivated`를 통해 클라이언트 Cosmetic FX를 연결할 수 있는 진입점을 추가했다.
+- Cosmetic Multicast는 애니메이션과 이펙트 표시만 담당하며 Trace, Damage, Cooldown 같은 게임 판정에는 사용하지 않는다.
+- Listen Server와 Client 양쪽에서 정상 Hit, Miss, 쿨다운 중 재사용, 사망 상태 사용, 사망 대상, 리스폰 이후 재사용을 검증했다.
+- 기존 기본 공격과 Ground Slash가 서로 독립적인 책임과 쿨다운 상태를 유지하는 것을 확인했다.
