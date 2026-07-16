@@ -28,7 +28,7 @@ public:
 	float Radius = 120.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
-	float Cooldown = 3.0f;
+	float Cooldown = 2.0f;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -39,8 +39,11 @@ class MPACTIONRPGSAMPLE_API UMPSkillComponent : public UActorComponent
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill")
 	FMPSkillData SkillData;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Skill|Debug")
+	bool bDrawSkillTrace = true;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Skill")
+	UPROPERTY(EditDefaultsOnly, Category = "Skill|Debug")
 	bool bDebugSkillLog = true;
 
 private:
@@ -66,6 +69,8 @@ private:
 	bool CanUseSkill(FString& OutReason) const;
 	void StartSkillCooldown();
 	float GetCurrentServerTime() const;
+	int32 PerformSkillTrace();
+	bool ApplySkillDamageToActor(AActor* TargetActor);
 	void PrintSkillLog(const FString& Message) const;
 	void PrintSkillDataLog() const;
 };

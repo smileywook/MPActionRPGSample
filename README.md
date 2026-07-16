@@ -465,3 +465,14 @@ HandleChanged
 - 정상 요청에서는 서버가 쿨다운을 시작하고 `Accepted` 로그를 출력하며, 잘못된 요청에서는 상태를 변경하지 않고 거절 사유를 출력한다.
 - Listen Server와 Client 양쪽에서 정상 사용, 쿨다운 중 재사용, 사망 상태 사용 요청을 테스트했다.
 - 오늘은 입력과 서버 검증 흐름까지만 구현했으며 실제 Trace와 데미지 적용은 다음 단계에서 연결할 예정이다.
+
+## Week 6 Day 4 - 서버 기준 Ground Slash 판정과 데미지 적용
+
+- `ServerUseSkill`에서 사용 승인이 완료되면 SkillComponent가 서버 기준으로 Ground Slash 판정을 수행하도록 연결했다.
+- Ground Slash는 `SkillData.Range`와 `SkillData.Radius`를 사용하는 Sphere Sweep 방식으로 구현했다.
+- 판정은 서버에서만 수행하며 Pawn Object Type을 대상으로 검색하고 스킬 소유자는 판정 대상에서 제외했다.
+- 같은 Actor의 여러 Collision Component가 감지되더라도 데미지가 중복 적용되지 않도록 처리된 Actor 목록을 관리했다.
+- 판정된 대상에서 HealthComponent를 찾고, 사망하지 않은 유효한 대상에게 `SkillData.Damage`를 적용하도록 구성했다.
+- SkillComponent는 CurrentHP를 직접 수정하지 않고 HealthComponent의 기존 서버 데미지 처리 함수를 사용한다.
+- 스킬 데미지 이후 CurrentHP Replication → OnRep → Delegate → PlayerController → UI 갱신 흐름이 기존 HealthComponent 구조를 통해 재사용되는 것을 확인했다.
+- Listen Server와 Client 양쪽에서 Ground Slash의 정상 Hit, Miss, 사거리 밖 대상, 쿨다운 중 재사용, 사망 사용자, 사망 대상, 리스폰 이후 재피격을 테스트했다.
