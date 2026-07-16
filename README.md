@@ -445,3 +445,12 @@ HandleChanged
 - Character에 SkillComponent를 추가하고 `CreateDefaultSubobject`로 생성되도록 연결했다.
 - Listen Server / Client 실행 시 각 Pawn에서 SkillComponent BeginPlay 로그가 출력되는 것을 확인했다.
 - 오늘은 실제 스킬 입력, 데미지, 쿨다운은 구현하지 않고 6주차 스킬 시스템의 기반 구조만 준비했다.
+
+## Week 6 Day 2 - Skill Data 구조 준비
+
+- SkillComponent에서 사용할 기본 스킬 데이터 구조체 `FMPSkillData`를 추가했다.
+- 샘플 스킬은 `GroundSlash`로 정의하고, 스킬 이름 / 데미지 / 사거리 / 판정 반경 / 쿨다운 값을 하나의 구조체로 관리하도록 구성했다.
+- SkillComponent에 `SkillData`를 추가하고 `GetSkillData`, `IsSkillDataValid` 함수를 통해 이후 서버 검증과 UI 표시에서 재사용할 수 있도록 준비했다.
+- 오늘 추가한 SkillData는 스킬의 고정 설정값이므로 별도의 Replication 대상으로 두지 않았다.
+- BeginPlay에서 SkillData 로그를 출력하여 Listen Server / Client 양쪽에서 동일한 스킬 기본값이 확인되는지 테스트했다.
+- 실제 스킬 입력, Server RPC, 쿨다운 적용, 데미지 판정은 다음 단계에서 구현할 예정이다.
