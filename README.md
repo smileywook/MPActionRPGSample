@@ -454,3 +454,14 @@ HandleChanged
 - 오늘 추가한 SkillData는 스킬의 고정 설정값이므로 별도의 Replication 대상으로 두지 않았다.
 - BeginPlay에서 SkillData 로그를 출력하여 Listen Server / Client 양쪽에서 동일한 스킬 기본값이 확인되는지 테스트했다.
 - 실제 스킬 입력, Server RPC, 쿨다운 적용, 데미지 판정은 다음 단계에서 구현할 예정이다.
+
+## Week 6 Day 3 - 스킬 입력과 서버 사용 검증
+
+- `IA_Skill`을 추가하고 기존 Input Mapping Context에 스킬 입력을 등록했다.
+- Character는 스킬 입력을 직접 처리하지 않고 `SkillComponent::RequestUseSkill`로 전달하도록 구성했다.
+- SkillComponent에 `ServerUseSkill` Server RPC를 추가하여 클라이언트의 스킬 사용 요청이 서버에서 처리되도록 구현했다.
+- 서버의 `CanUseSkill`에서 Authority, SkillData, HealthComponent, 사망 상태, 쿨다운 상태를 검증하도록 구성했다.
+- 쿨다운은 클라이언트 시간이 아니라 서버의 World Time을 기준으로 관리하도록 구현했다.
+- 정상 요청에서는 서버가 쿨다운을 시작하고 `Accepted` 로그를 출력하며, 잘못된 요청에서는 상태를 변경하지 않고 거절 사유를 출력한다.
+- Listen Server와 Client 양쪽에서 정상 사용, 쿨다운 중 재사용, 사망 상태 사용 요청을 테스트했다.
+- 오늘은 입력과 서버 검증 흐름까지만 구현했으며 실제 Trace와 데미지 적용은 다음 단계에서 연결할 예정이다.

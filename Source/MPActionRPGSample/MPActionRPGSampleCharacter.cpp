@@ -150,6 +150,10 @@ void AMPActionRPGSampleCharacter::SetupPlayerInputComponent(UInputComponent* Pla
 		{
 			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::Attack);
 		}
+		if (SkillAction)
+		{
+			EnhancedInputComponent->BindAction(SkillAction, ETriggerEvent::Started, this, &ThisClass::UseSkill);
+		}
 	}
 	else
 	{
@@ -231,6 +235,16 @@ void AMPActionRPGSampleCharacter::Attack()
 		*GetName(), HasAuthority(), static_cast<int32>(GetLocalRole()), static_cast<int32>(GetRemoteRole()));
 
 	ServerStartAttack();
+}
+
+void AMPActionRPGSampleCharacter::UseSkill()
+{
+	if (!SkillComponent)
+	{
+		return;
+	}
+
+	SkillComponent->RequestUseSkill();
 }
 
 void AMPActionRPGSampleCharacter::ServerStartAttack_Implementation()
