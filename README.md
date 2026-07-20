@@ -488,3 +488,15 @@ HandleChanged
 - Cosmetic Multicast는 애니메이션과 이펙트 표시만 담당하며 Trace, Damage, Cooldown 같은 게임 판정에는 사용하지 않는다.
 - Listen Server와 Client 양쪽에서 정상 Hit, Miss, 쿨다운 중 재사용, 사망 상태 사용, 사망 대상, 리스폰 이후 재사용을 검증했다.
 - 기존 기본 공격과 Ground Slash가 서로 독립적인 책임과 쿨다운 상태를 유지하는 것을 확인했다.
+
+### Week 7 Day 1 — Monster Character / AIController 기본 구조
+
+- `AMPMonsterCharacter`와 `AMPMonsterAIController`를 추가했다.
+- Monster Character에 기존 `UMPHealthComponent`를 연결했다.
+- Monster Character의 Actor 및 Movement Replication을 활성화했다.
+- `AIControllerClass`를 `AMPMonsterAIController`로 지정했다.
+- `AutoPossessAI`를 `PlacedInWorldOrSpawned`로 설정해 레벨 배치와 서버 Spawn 방식을 모두 지원하도록 구성했다.
+- 서버에서 Monster AIController가 Monster Character를 Possess하는 것을 확인했다.
+- Client에는 Monster Character만 복제되고 AIController는 존재하지 않는 것을 확인했다.
+- AI 판단은 서버에만 두고 Client는 위치와 전투 상태의 결과만 복제받는 책임 분리 기준을 정리했다.
+- 기존 플레이어 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
