@@ -6,6 +6,7 @@
 #include "Component/MPHealthComponent.h"
 #include "MPMonsterCharacter.h"
 #include "EngineUtils.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "TimerManager.h"
 
 AMPMonsterAIController::AMPMonsterAIController()
@@ -108,10 +109,81 @@ void AMPMonsterAIController::UpdateTarget()
     if (!IsValid(GetPawn()))
     {
         SetCurrentTarget(nullptr);
+        StopChasing(TEXT("InvalidPawn"));
         return;
     }
 
     SetCurrentTarget(FindNearestValidTarget());
+    UpdateMovement();
+}
+
+void AMPMonsterAIController::UpdateMovement()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
+    AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
+    AMPActionRPGSampleCharacter* Target = GetCurrentTarget();
+
+    if (!IsValid(MonsterCharacter) || !IsValidTarget(Target))
+    {
+        StopChasing(TEXT("InvalidTarget"));
+        return;
+    }
+
+    const UMPHealthComponent* MonsterHealthComponent = MonsterCharacter->GetHealthComponent();
+    if (!IsValid(MonsterHealthComponent) || MonsterHealthComponent->IsDead())
+    {
+        StopChasing(TEXT("MonsterDead"));
+        return;
+    }
+
+    const float AttackRange = MonsterCharacter->GetAttackRange();
+    const float DistanceSquared = FVector::DistSquared2D(MonsterCharacter->GetActorLocation(), Target->GetActorLocation());
+
+    if (DistanceSquared <= FMath::Square(AttackRange))
+    {
+        StopChasing(TEXT("WithinAttackRange"));
+        return;
+    }
+
+    StartChasing(Target);
+}
+
+void AMPMonsterAIController::StartChasing(AMPActionRPGSampleCharacter* Target)
+{
+    if (bIsChasing || !IsValid(Target))
+    {
+        return;
+    }
+
+    const AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
+    if (!IsValid(MonsterCharacter))
+    {
+        return;
+    }
+
+    const EPathFollowingRequestResult::Type MoveResult = MoveToActor(Target, MonsterCharacter->GetAttackRange(), false);
+
+    if (MoveResult == EPathFollowingRequestResult::Failed)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MonsterAI] ChaseFailed Monster=%s Target=%s Reason=MoveRequestFailed"),
+            *GetNameSafe(GetPawn()), *GetNameSafe(Target));
+        return;
+    }
+
+    if (MoveResult == EPathFollowingRequestResult::AlreadyAtGoal)
+    {
+        StopChasing(TEXT("AlreadyAtGoal"));
+        return;
+    }
+
+    bIsChasing = true;
+
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] ChaseStarted Monster=%s Target=%s AttackRange=%.1f"),
+        *GetNameSafe(GetPawn()), *GetNameSafe(Target), MonsterCharacter->GetAttackRange());
 }
 
 bool AMPMonsterAIController::IsValidTarget(const AMPActionRPGSampleCharacter* Candidate) const
@@ -168,12 +240,28 @@ AMPActionRPGSampleCharacter* AMPMonsterAIController::FindNearestValidTarget() co
     return NearestTarget;
 }
 
+void AMPMonsterAIController::StopChasing(const TCHAR* Reason)
+{
+    if (!bIsChasing)
+    {
+        return;
+    }
+
+    StopMovement();
+    bIsChasing = false;
+
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] ChaseStopped Monster=%s Target=%s Reason=%s"),
+        *GetNameSafe(GetPawn()), *GetNameSafe(CurrentTarget.Get()), Reason);
+}
+
 void AMPMonsterAIController::SetCurrentTarget(AMPActionRPGSampleCharacter* NewTarget)
 {
     if (CurrentTarget.Get() == NewTarget)
     {
         return;
     }
+
+    StopChasing(TEXT("TargetChanged"));
 
     const FString PreviousTargetName = GetNameSafe(CurrentTarget.Get());
     CurrentTarget = NewTarget;
@@ -182,24 +270,39 @@ void AMPMonsterAIController::SetCurrentTarget(AMPActionRPGSampleCharacter* NewTa
     {
         const float Distance = FVector::Dist(GetPawn()->GetActorLocation(), NewTarget->GetActorLocation());
 
-        UE_LOG(LogTemp, Log, 
-            TEXT("[MonsterAI] TargetChanged Monster=%s Previous=%s Current=%s Distance=%.1f"),
-            *GetNameSafe(GetPawn()),
-            *PreviousTargetName,
-            *GetNameSafe(NewTarget),
-            Distance);
+        UE_LOG(LogTemp, Log, TEXT("[MonsterAI] TargetChanged Monster=%s Previous=%s Current=%s Distance=%.1f"),
+            *GetNameSafe(GetPawn()), *PreviousTargetName, *GetNameSafe(NewTarget), Distance);
         return;
     }
 
-    UE_LOG(LogTemp, Log,
-        TEXT("[MonsterAI] TargetCleared Monster=%s Previous=%s"),
-        *GetNameSafe(GetPawn()),
-        *PreviousTargetName);
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] TargetCleared Monster=%s Previous=%s"),
+        *GetNameSafe(GetPawn()), *PreviousTargetName);
+}
+
+void AMPMonsterAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+{
+    Super::OnMoveCompleted(RequestID, Result);
+
+    bIsChasing = false;
+
+    if (Result.IsSuccess())
+    {
+        UE_LOG(LogTemp, Log, TEXT("[MonsterAI] MoveCompleted Monster=%s Target=%s Result=Success"),
+            *GetNameSafe(GetPawn()), *GetNameSafe(CurrentTarget.Get()));
+        return;
+    }
+
+    if (Result.Code != EPathFollowingResult::Aborted)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[MonsterAI] MoveCompleted Monster=%s Target=%s Result=%d"),
+            *GetNameSafe(GetPawn()), *GetNameSafe(CurrentTarget.Get()), static_cast<int32>(Result.Code));
+    }
 }
 
 void AMPMonsterAIController::OnUnPossess()
 {
     StopTargetSearch();
+    StopChasing(TEXT("UnPossess"));
     SetCurrentTarget(nullptr);
 
     Super::OnUnPossess();

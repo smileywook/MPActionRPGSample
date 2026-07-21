@@ -2,6 +2,7 @@
 
 #include "MPMonsterCharacter.h"
 #include "Component/MPHealthComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MPMonsterAIController.h"
 
 // Sets default values
@@ -14,6 +15,11 @@ AMPMonsterCharacter::AMPMonsterCharacter()
 
     AIControllerClass = AMPMonsterAIController::StaticClass();
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+    bUseControllerRotationYaw = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.0f, 360.0f, 0.0f);
+    GetCharacterMovement()->MaxWalkSpeed = 300.0f;
 }
 
 // Called when the game starts or when spawned
@@ -35,5 +41,10 @@ void AMPMonsterCharacter::BeginPlay()
 UMPHealthComponent* AMPMonsterCharacter::GetHealthComponent() const
 {
     return HealthComponent;
+}
+
+float AMPMonsterCharacter::GetAttackRange() const
+{
+    return AttackRange;
 }
 

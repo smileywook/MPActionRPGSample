@@ -26,6 +26,7 @@ private:
     UPROPERTY(Transient)
     TWeakObjectPtr<AMPActionRPGSampleCharacter> CurrentTarget;
 
+    bool bIsChasing = false;
     FTimerHandle TargetSearchTimerHandle;
 
 public:
@@ -37,11 +38,15 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
     virtual void OnUnPossess() override;
+    virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
 
 private:
     void StartTargetSearch();
     void StopTargetSearch();
     void UpdateTarget();
+    void UpdateMovement();
+    void StartChasing(AMPActionRPGSampleCharacter* Target);
+    void StopChasing(const TCHAR* Reason);
     AMPActionRPGSampleCharacter* FindNearestValidTarget() const;
     bool IsValidTarget(const AMPActionRPGSampleCharacter* Candidate) const;
     void SetCurrentTarget(AMPActionRPGSampleCharacter* NewTarget);

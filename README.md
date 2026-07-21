@@ -515,3 +515,19 @@ HandleChanged
 - 플레이어가 리스폰하면 다음 탐색 주기부터 다시 Target 후보가 되는 것을 확인했다.
 - Target 탐색과 선택이 서버에서만 실행되고 Client에는 AIController 판단 상태가 복제되지 않는 것을 확인했다.
 - 기존 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
+
+### Week 7 Day 3 — 서버 AI 이동 및 플레이어 추적
+
+- Monster Character에 공격 사거리 데이터를 추가했다.
+- Monster의 기본 이동 속도와 이동 방향 회전 설정을 구성했다.
+- 테스트 레벨에 `NavMeshBoundsVolume`을 배치하고 AI 이동 가능 영역을 설정했다.
+- 서버 AIController가 현재 Target과 Monster 사이의 거리를 검사하도록 구현했다.
+- Target이 공격 사거리 밖에 있을 때 `MoveToActor()`를 사용해 추적하도록 구현했다.
+- Target이 공격 사거리 안으로 들어오면 이동을 중지하도록 처리했다.
+- 동일한 Target을 추적하는 동안 불필요한 이동 요청이 반복되지 않도록 추적 상태를 관리했다.
+- Target 변경, 사망, 소실 또는 탐색 범위 이탈 시 기존 이동을 중지하도록 처리했다.
+- 이동 요청 완료와 실패 시 추적 상태를 정리해 다음 탐색 주기에 재시도할 수 있도록 구성했다.
+- Monster 사망 상태에서는 Target을 추적하지 않도록 방어 로직을 추가했다.
+- AI 이동 판단과 `MoveToActor()` 호출이 서버에서만 실행되는 것을 확인했다.
+- 서버 Monster Character의 이동 결과가 Listen Server와 Client에 동일하게 복제되는 것을 확인했다.
+- 기존 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.

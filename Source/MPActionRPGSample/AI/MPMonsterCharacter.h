@@ -17,11 +17,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMPHealthComponent> HealthComponent;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+	float AttackRange = 150.0f;
+
 public:
 	// Sets default values for this character's properties
 	AMPMonsterCharacter();
 
 	UMPHealthComponent* GetHealthComponent() const;
+	float GetAttackRange() const;
 
 protected:
 	// Called when the game starts or when spawned
