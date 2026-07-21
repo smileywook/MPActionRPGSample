@@ -547,3 +547,22 @@ HandleChanged
 - 플레이어 사망 이후 추가 공격이 차단되고 다른 살아 있는 플레이어로 Target이 변경되는 것을 확인했다.
 - 플레이어 리스폰 이후 다시 Monster의 Target 후보가 되고 공격받을 수 있는 것을 확인했다.
 - 기존 기본 공격, Ground Slash, Skill 쿨다운, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
+
+### Week 7 Day 5 — Monster 피격·사망 및 전체 테스트
+
+- Player 기본 공격으로 Monster의 HealthComponent에 데미지가 적용되는 것을 확인했다.
+- Ground Slash의 Pawn Sphere Sweep가 Monster를 탐지하고 SkillData.Damage를 적용하는 것을 확인했다.
+- Monster 전용 피격 분기를 추가하지 않고 기존 HealthComponent 기반 전투 흐름을 재사용했다.
+- Monster AIController가 Monster HealthComponent의 OnDeath Delegate를 구독하도록 구성했다.
+- Monster 사망 시 Target 탐색 Timer를 즉시 중지하도록 처리했다.
+- Monster 사망 시 진행 중인 이동을 중지하고 CurrentTarget을 해제하도록 구현했다.
+- Monster 사망 이후 추가 추적과 공격 판단이 실행되지 않도록 처리했다.
+- Monster Character가 HealthComponent의 OnDeath를 구독해 Server와 Client에서 사망 상태를 반영하도록 구성했다.
+- Monster의 CurrentHP와 bIsDead 상태가 Client에 Replication되는 것을 확인했다.
+- 죽은 Monster에게 기본 공격과 Ground Slash의 추가 데미지가 적용되지 않는 것을 확인했다.
+- Listen Server와 Client에서 Monster 위치, HP, 사망 상태가 동일하게 유지되는 것을 확인했다.
+- Player 사망 시 Monster가 다른 살아 있는 Player를 선택하거나 Target을 해제하는 것을 확인했다.
+- Player 리스폰 이후 다시 Target 후보가 되고 Monster의 추적과 공격이 재개되는 것을 확인했다.
+- Target 탐색, 이동, 공격, Monster 피격과 사망 흐름의 전체 테스트를 완료했다.
+- 기존 Player 이동, 기본 공격, Ground Slash, Skill 쿨다운, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
+- 7주차 Monster AI 구현과 README 정리를 완료했다.

@@ -7,6 +7,7 @@
 #include "MPMonsterAIController.generated.h"
 
 class AMPActionRPGSampleCharacter;
+class UMPHealthComponent;
 
 /**
  * 
@@ -25,6 +26,9 @@ private:
 
     UPROPERTY(Transient)
     TWeakObjectPtr<AMPActionRPGSampleCharacter> CurrentTarget;
+
+    UPROPERTY(Transient)
+    TWeakObjectPtr<UMPHealthComponent> BoundMonsterHealthComponent;
 
     bool bIsChasing = false;
     float NextAttackServerTime = 0.0f;
@@ -53,5 +57,10 @@ private:
     AMPActionRPGSampleCharacter* FindNearestValidTarget() const;
     bool IsValidTarget(const AMPActionRPGSampleCharacter* Candidate) const;
     void SetCurrentTarget(AMPActionRPGSampleCharacter* NewTarget);
+    void BindMonsterHealthComponent(UMPHealthComponent* HealthComponent);
+    void UnbindMonsterHealthComponent();
+
+    UFUNCTION()
+    void HandleMonsterDeath();
 	
 };

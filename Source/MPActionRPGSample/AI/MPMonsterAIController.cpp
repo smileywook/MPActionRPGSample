@@ -19,27 +19,42 @@ void AMPMonsterAIController::BeginPlay()
 {
     Super::BeginPlay();
 
-    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] BeginPlay Name=%s NetMode=%d Authority=%d Pawn=%s"),
-        *GetName(), static_cast<int32>(GetNetMode()), HasAuthority(), *GetNameSafe(GetPawn()));
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] BeginPlay Name=%s NetMode=%d Authority=%d Pawn=%s"), *GetName(), static_cast<int32>(GetNetMode()), HasAuthority(), *GetNameSafe(GetPawn()));
 
-    if (HasAuthority() && IsValid(GetPawn()))
+    if (!HasAuthority())
     {
-        StartTargetSearch();
+        return;
     }
+
+    AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
+    if (!IsValid(MonsterCharacter))
+    {
+        return;
+    }
+
+    BindMonsterHealthComponent(MonsterCharacter->GetHealthComponent());
+
+    if (!IsValid(MonsterCharacter->GetHealthComponent()) || MonsterCharacter->GetHealthComponent()->IsDead())
+    {
+        HandleMonsterDeath();
+        return;
+    }
+
+    StartTargetSearch();
 }
 
 void AMPMonsterAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    const AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(InPawn);
+    AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(InPawn);
 
-    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] OnPossess Controller=%s Pawn=%s Authority=%d ValidMonster=%d"),
-        *GetName(), *GetNameSafe(InPawn), HasAuthority(), IsValid(MonsterCharacter));
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] OnPossess Controller=%s Pawn=%s Authority=%d ValidMonster=%d"), *GetName(), *GetNameSafe(InPawn), HasAuthority(), IsValid(MonsterCharacter));
 
     if (!HasAuthority())
     {
         UE_LOG(LogTemp, Error, TEXT("[MonsterAI] OnPossess unexpectedly executed without authority. Controller=%s"), *GetName());
+        return;
     }
 
     if (!IsValid(MonsterCharacter))
@@ -48,8 +63,27 @@ void AMPMonsterAIController::OnPossess(APawn* InPawn)
         return;
     }
 
+    BindMonsterHealthComponent(MonsterCharacter->GetHealthComponent());
+
+    if (!IsValid(MonsterCharacter->GetHealthComponent()) || MonsterCharacter->GetHealthComponent()->IsDead())
+    {
+        HandleMonsterDeath();
+        return;
+    }
+
     NextAttackServerTime = 0.0f;
     StartTargetSearch();
+}
+
+void AMPMonsterAIController::OnUnPossess()
+{
+    StopTargetSearch();
+    StopChasing(TEXT("UnPossess"));
+    SetCurrentTarget(nullptr);
+    NextAttackServerTime = 0.0f;
+    UnbindMonsterHealthComponent();
+
+    Super::OnUnPossess();
 }
 
 void AMPMonsterAIController::StartTargetSearch()
@@ -140,7 +174,6 @@ void AMPMonsterAIController::TryAttackTarget(AMPActionRPGSampleCharacter* Target
     }
 
     AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
-
     if (!IsValid(MonsterCharacter) || !MonsterCharacter->ApplyAttackDamageToActor(Target))
     {
         return;
@@ -276,16 +309,15 @@ AMPActionRPGSampleCharacter* AMPMonsterAIController::FindNearestValidTarget() co
 
 void AMPMonsterAIController::StopChasing(const TCHAR* Reason)
 {
-    if (!bIsChasing)
-    {
-        return;
-    }
+    const bool bWasChasing = bIsChasing;
 
     StopMovement();
     bIsChasing = false;
 
-    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] ChaseStopped Monster=%s Target=%s Reason=%s"),
-        *GetNameSafe(GetPawn()), *GetNameSafe(CurrentTarget.Get()), Reason);
+    if (bWasChasing)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[MonsterAI] ChaseStopped Monster=%s Target=%s Reason=%s"), *GetNameSafe(GetPawn()), *GetNameSafe(CurrentTarget.Get()), Reason);
+    }
 }
 
 void AMPMonsterAIController::SetCurrentTarget(AMPActionRPGSampleCharacter* NewTarget)
@@ -338,12 +370,45 @@ void AMPMonsterAIController::OnMoveCompleted(FAIRequestID RequestID, const FPath
     }
 }
 
-void AMPMonsterAIController::OnUnPossess()
+void AMPMonsterAIController::BindMonsterHealthComponent(UMPHealthComponent* HealthComponent)
 {
+    if (BoundMonsterHealthComponent.Get() == HealthComponent)
+    {
+        return;
+    }
+
+    UnbindMonsterHealthComponent();
+
+    if (!IsValid(HealthComponent))
+    {
+        return;
+    }
+
+    BoundMonsterHealthComponent = HealthComponent;
+    BoundMonsterHealthComponent->OnDeath.AddUniqueDynamic(this, &AMPMonsterAIController::HandleMonsterDeath);
+}
+
+void AMPMonsterAIController::HandleMonsterDeath()
+{
+    if (!HasAuthority())
+    {
+        return;
+    }
+
     StopTargetSearch();
-    StopChasing(TEXT("UnPossess"));
+    StopChasing(TEXT("MonsterDead"));
     SetCurrentTarget(nullptr);
     NextAttackServerTime = 0.0f;
 
-    Super::OnUnPossess();
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] MonsterDeathHandled Monster=%s TargetSearchStopped=1 MovementStopped=1 AttackStopped=1"), *GetNameSafe(GetPawn()));
+}
+
+void AMPMonsterAIController::UnbindMonsterHealthComponent()
+{
+    if (BoundMonsterHealthComponent.IsValid())
+    {
+        BoundMonsterHealthComponent->OnDeath.RemoveAll(this);
+    }
+
+    BoundMonsterHealthComponent.Reset();
 }
