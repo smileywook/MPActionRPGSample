@@ -500,3 +500,18 @@ HandleChanged
 - Client에는 Monster Character만 복제되고 AIController는 존재하지 않는 것을 확인했다.
 - AI 판단은 서버에만 두고 Client는 위치와 전투 상태의 결과만 복제받는 책임 분리 기준을 정리했다.
 - 기존 플레이어 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
+
+### Week 7 Day 2 — 서버 플레이어 탐색 및 Target 선택
+
+- `AMPMonsterAIController`에 Timer 기반 Target 탐색 구조를 추가했다.
+- Target 탐색 주기와 탐색 반경을 데이터로 분리했다.
+- 서버에서 일정한 주기로 Player Character를 검색하도록 구현했다.
+- 살아 있고 `HealthComponent`가 유효한 플레이어만 Target 후보로 사용했다.
+- 탐색 반경 안에서 Monster와 가장 가까운 플레이어를 `CurrentTarget`으로 선택했다.
+- `CurrentTarget`을 `TWeakObjectPtr`로 관리해 대상 Actor 소실에 안전하게 대응하도록 구성했다.
+- 동일한 Target이 유지되는 동안 불필요한 변경 로그가 출력되지 않도록 처리했다.
+- 현재 Target의 사망, 거리 이탈 또는 소실 시 다른 유효 Target을 다시 선택하도록 구현했다.
+- 유효한 Target이 없을 경우 `CurrentTarget`을 해제하도록 처리했다.
+- 플레이어가 리스폰하면 다음 탐색 주기부터 다시 Target 후보가 되는 것을 확인했다.
+- Target 탐색과 선택이 서버에서만 실행되고 Client에는 AIController 판단 상태가 복제되지 않는 것을 확인했다.
+- 기존 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.

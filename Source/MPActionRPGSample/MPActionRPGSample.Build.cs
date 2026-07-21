@@ -8,7 +8,10 @@ public class MPActionRPGSample : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicIncludePaths.Add(ModuleDirectory);
+        PublicIncludePaths.AddRange(new string[]
+        {
+            "MPActionRPGSample"
+        });
 
         PublicDependencyModuleNames.AddRange(new string[]
 		{ 
