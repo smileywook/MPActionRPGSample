@@ -15,21 +15,12 @@ AMPMonsterAIController::AMPMonsterAIController()
     bReplicates = false;
 }
 
-AMPActionRPGSampleCharacter* AMPMonsterAIController::GetCurrentTarget() const
-{
-    return CurrentTarget.Get();
-}
-
 void AMPMonsterAIController::BeginPlay()
 {
     Super::BeginPlay();
 
-    UE_LOG(LogTemp, Log,
-        TEXT("[MonsterAI] BeginPlay Name=%s NetMode=%d Authority=%d Pawn=%s"),
-        *GetName(),
-        static_cast<int32>(GetNetMode()),
-        HasAuthority(),
-        *GetNameSafe(GetPawn()));
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] BeginPlay Name=%s NetMode=%d Authority=%d Pawn=%s"),
+        *GetName(), static_cast<int32>(GetNetMode()), HasAuthority(), *GetNameSafe(GetPawn()));
 
     if (HasAuthority() && IsValid(GetPawn()))
     {
@@ -43,28 +34,21 @@ void AMPMonsterAIController::OnPossess(APawn* InPawn)
 
     const AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(InPawn);
 
-    UE_LOG(LogTemp, Log,
-        TEXT("[MonsterAI] OnPossess Controller=%s Pawn=%s Authority=%d ValidMonster=%d"),
-        *GetName(),
-        *GetNameSafe(InPawn),
-        HasAuthority(),
-        IsValid(MonsterCharacter));
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] OnPossess Controller=%s Pawn=%s Authority=%d ValidMonster=%d"),
+        *GetName(), *GetNameSafe(InPawn), HasAuthority(), IsValid(MonsterCharacter));
 
     if (!HasAuthority())
     {
-        UE_LOG(LogTemp, Error,
-            TEXT("[MonsterAI] OnPossess unexpectedly executed without authority. Controller=%s"),
-            *GetName());
+        UE_LOG(LogTemp, Error, TEXT("[MonsterAI] OnPossess unexpectedly executed without authority. Controller=%s"), *GetName());
     }
 
     if (!IsValid(MonsterCharacter))
     {
-        UE_LOG(LogTemp, Warning,
-            TEXT("[MonsterAI] Target search rejected. Reason=InvalidMonster Pawn=%s"),
-            *GetNameSafe(InPawn));
+        UE_LOG(LogTemp, Warning, TEXT("[MonsterAI] Target search rejected. Reason=InvalidMonster Pawn=%s"), *GetNameSafe(InPawn));
         return;
     }
 
+    NextAttackServerTime = 0.0f;
     StartTargetSearch();
 }
 
@@ -79,14 +63,10 @@ void AMPMonsterAIController::StartTargetSearch()
     UpdateTarget();
 
     const float ValidSearchInterval = FMath::Max(TargetSearchInterval, 0.1f);
-    GetWorldTimerManager().SetTimer(TargetSearchTimerHandle, this,
-        &AMPMonsterAIController::UpdateTarget, ValidSearchInterval, true);
+    GetWorldTimerManager().SetTimer(TargetSearchTimerHandle, this, &AMPMonsterAIController::UpdateTarget, ValidSearchInterval, true);
 
-    UE_LOG(LogTemp, Log,
-        TEXT("[MonsterAI] TargetSearchStarted Monster=%s Interval=%.2f Radius=%.1f"),
-        *GetNameSafe(GetPawn()),
-        ValidSearchInterval,
-        TargetSearchRadius);
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] TargetSearchStarted Monster=%s Interval=%.2f Radius=%.1f"),
+        *GetNameSafe(GetPawn()), ValidSearchInterval, TargetSearchRadius);
 }
 
 void AMPMonsterAIController::StopTargetSearch()
@@ -126,7 +106,6 @@ void AMPMonsterAIController::UpdateMovement()
 
     AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
     AMPActionRPGSampleCharacter* Target = GetCurrentTarget();
-
     if (!IsValid(MonsterCharacter) || !IsValidTarget(Target))
     {
         StopChasing(TEXT("InvalidTarget"));
@@ -146,10 +125,65 @@ void AMPMonsterAIController::UpdateMovement()
     if (DistanceSquared <= FMath::Square(AttackRange))
     {
         StopChasing(TEXT("WithinAttackRange"));
+        TryAttackTarget(Target);
         return;
     }
 
     StartChasing(Target);
+}
+
+void AMPMonsterAIController::TryAttackTarget(AMPActionRPGSampleCharacter* Target)
+{
+    if (!CanAttackTarget(Target))
+    {
+        return;
+    }
+
+    AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
+
+    if (!IsValid(MonsterCharacter) || !MonsterCharacter->ApplyAttackDamageToActor(Target))
+    {
+        return;
+    }
+
+    const float CurrentServerTime = GetWorld()->GetTimeSeconds();
+    NextAttackServerTime = CurrentServerTime + MonsterCharacter->GetAttackCooldown();
+
+    UE_LOG(LogTemp, Log, TEXT("[MonsterAI] AttackApplied Monster=%s Target=%s Damage=%.1f Cooldown=%.2f NextAttackTime=%.2f"), *GetNameSafe(MonsterCharacter), *GetNameSafe(Target), MonsterCharacter->GetAttackDamage(), MonsterCharacter->GetAttackCooldown(), NextAttackServerTime);
+}
+
+bool AMPMonsterAIController::CanAttackTarget(const AMPActionRPGSampleCharacter* Target) const
+{
+    if (!HasAuthority() || !IsValid(GetWorld()) || CurrentTarget.Get() != Target || !IsValidTarget(Target))
+    {
+        return false;
+    }
+
+    const AMPMonsterCharacter* MonsterCharacter = Cast<AMPMonsterCharacter>(GetPawn());
+    if (!IsValid(MonsterCharacter))
+    {
+        return false;
+    }
+
+    const UMPHealthComponent* MonsterHealthComponent = MonsterCharacter->GetHealthComponent();
+    if (!IsValid(MonsterHealthComponent) || MonsterHealthComponent->IsDead())
+    {
+        return false;
+    }
+
+    if (MonsterCharacter->GetAttackDamage() <= 0.0f || MonsterCharacter->GetAttackCooldown() <= 0.0f)
+    {
+        return false;
+    }
+
+    const float DistanceSquared = FVector::DistSquared2D(MonsterCharacter->GetActorLocation(), Target->GetActorLocation());
+
+    if (DistanceSquared > FMath::Square(MonsterCharacter->GetAttackRange()))
+    {
+        return false;
+    }
+
+    return GetWorld()->GetTimeSeconds() >= NextAttackServerTime;
 }
 
 void AMPMonsterAIController::StartChasing(AMPActionRPGSampleCharacter* Target)
@@ -279,6 +313,11 @@ void AMPMonsterAIController::SetCurrentTarget(AMPActionRPGSampleCharacter* NewTa
         *GetNameSafe(GetPawn()), *PreviousTargetName);
 }
 
+AMPActionRPGSampleCharacter* AMPMonsterAIController::GetCurrentTarget() const
+{
+    return CurrentTarget.Get();
+}
+
 void AMPMonsterAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
     Super::OnMoveCompleted(RequestID, Result);
@@ -304,6 +343,7 @@ void AMPMonsterAIController::OnUnPossess()
     StopTargetSearch();
     StopChasing(TEXT("UnPossess"));
     SetCurrentTarget(nullptr);
+    NextAttackServerTime = 0.0f;
 
     Super::OnUnPossess();
 }

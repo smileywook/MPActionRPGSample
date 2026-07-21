@@ -27,6 +27,7 @@ private:
     TWeakObjectPtr<AMPActionRPGSampleCharacter> CurrentTarget;
 
     bool bIsChasing = false;
+    float NextAttackServerTime = 0.0f;
     FTimerHandle TargetSearchTimerHandle;
 
 public:
@@ -47,6 +48,8 @@ private:
     void UpdateMovement();
     void StartChasing(AMPActionRPGSampleCharacter* Target);
     void StopChasing(const TCHAR* Reason);
+    void TryAttackTarget(AMPActionRPGSampleCharacter* Target);
+    bool CanAttackTarget(const AMPActionRPGSampleCharacter* Target) const;
     AMPActionRPGSampleCharacter* FindNearestValidTarget() const;
     bool IsValidTarget(const AMPActionRPGSampleCharacter* Candidate) const;
     void SetCurrentTarget(AMPActionRPGSampleCharacter* NewTarget);

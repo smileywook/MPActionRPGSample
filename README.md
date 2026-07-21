@@ -531,3 +531,19 @@ HandleChanged
 - AI 이동 판단과 `MoveToActor()` 호출이 서버에서만 실행되는 것을 확인했다.
 - 서버 Monster Character의 이동 결과가 Listen Server와 Client에 동일하게 복제되는 것을 확인했다.
 - 기존 이동, 기본 공격, Ground Slash, HP UI, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
+
+### Week 7 Day 4 — 몬스터 서버 공격
+
+- Monster Character에 공격 데미지와 공격 쿨다운 데이터를 추가했다.
+- Monster Character가 검증된 Target의 HealthComponent에 데미지를 적용하는 서버 전용 공격 함수를 구현했다.
+- AIController에 서버 기준 다음 공격 가능 시간을 추가했다.
+- Monster와 Target의 생존 상태, 현재 Target 일치 여부, 공격 데이터, 거리, 쿨다운을 공격 직전에 다시 검증하도록 구현했다.
+- Target이 공격 사거리 안에 있을 때 이동을 중지하고 공격을 시도하도록 추적 흐름에 연결했다.
+- 공격이 성공한 이후에만 다음 공격 가능 시간을 갱신하도록 처리했다.
+- Target 변경으로 Monster의 공격 쿨다운을 우회할 수 없도록 Monster 단위 쿨다운을 유지했다.
+- 죽은 플레이어와 공격 사거리 밖의 플레이어에게 데미지가 적용되지 않도록 처리했다.
+- Monster 공격 데미지가 서버에서만 적용되고 Client는 CurrentHP Replication 결과만 전달받는 것을 확인했다.
+- Listen Server와 Client Player 모두 Monster 공격으로 HP가 감소하고 기존 Health UI가 갱신되는 것을 확인했다.
+- 플레이어 사망 이후 추가 공격이 차단되고 다른 살아 있는 플레이어로 Target이 변경되는 것을 확인했다.
+- 플레이어 리스폰 이후 다시 Monster의 Target 후보가 되고 공격받을 수 있는 것을 확인했다.
+- 기존 기본 공격, Ground Slash, Skill 쿨다운, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.

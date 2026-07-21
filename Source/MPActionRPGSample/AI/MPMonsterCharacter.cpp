@@ -48,3 +48,29 @@ float AMPMonsterCharacter::GetAttackRange() const
     return AttackRange;
 }
 
+float AMPMonsterCharacter::GetAttackDamage() const
+{
+    return AttackDamage;
+}
+
+float AMPMonsterCharacter::GetAttackCooldown() const
+{
+    return AttackCooldown;
+}
+
+bool AMPMonsterCharacter::ApplyAttackDamageToActor(AActor* TargetActor)
+{
+    if (!HasAuthority() || !IsValid(TargetActor) || TargetActor == this)
+    {
+        return false;
+    }
+
+    UMPHealthComponent* TargetHealthComponent = TargetActor->FindComponentByClass<UMPHealthComponent>();
+    if (!IsValid(TargetHealthComponent) || TargetHealthComponent->IsDead())
+    {
+        return false;
+    }
+
+    TargetHealthComponent->ApplyDamage(AttackDamage);
+    return true;
+}
