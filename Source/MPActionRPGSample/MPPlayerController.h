@@ -13,6 +13,7 @@ class AMPActionRPGSampleCharacter;
 class UMPSkillComponent;
 class UProgressBar;
 class UTextBlock;
+class UMPCombatHUDWidget;
 
 /**
  * 
@@ -31,6 +32,13 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UMPHealthComponent> BoundHealthComponent;
+
+private:
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UMPCombatHUDWidget> CombatHUDWidgetClass;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UMPCombatHUDWidget> CombatHUDWidget;
 
 private:
 	UPROPERTY()
@@ -92,7 +100,13 @@ private:
 	void RespawnControlledPawn(AMPActionRPGSampleCharacter* MPCharacter, UMPHealthComponent* HealthComponent);
 	bool MovePawnToRespawnLocation(AMPActionRPGSampleCharacter* MPCharacter);
 
-	void UpdateHealthDebugUI(float CurrentHP, float MaxHP);
+	void CreateNetworkDebugWidget();
+	void RemoveNetworkDebugWidget();
+
+	void CreateCombatHUD();
+	void RemoveCombatHUD();
+
+	void UpdateCombatHUDHealth(float CurrentHP, float MaxHP);
 	void UpdateDeathDebugUI(bool bDead);
 
 	void TryBindSkillComponent();

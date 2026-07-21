@@ -11,6 +11,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UI/MPNetworkDebugWidget.h"
+#include "UI/MPCombatHUDWidget.h"
 #include "TimerManager.h"
 
 namespace
@@ -54,6 +55,50 @@ void AMPPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CreateNetworkDebugWidget();
+	CreateCombatHUD();
+
+	TryBindPlayerStateEvents();
+	TryBindHealthComponent();
+	TryBindSkillComponent();
+}
+
+void AMPPlayerController::CreateNetworkDebugWidget()
+{
+	if (!IsLocalController() || IsValid(NetworkDebugWidget) || !NetworkDebugWidgetClass)
+	{
+		return;
+	}
+
+	NetworkDebugWidget = CreateWidget<UMPNetworkDebugWidget>(this, NetworkDebugWidgetClass);
+
+	if (!IsValid(NetworkDebugWidget))
+	{
+		return;
+	}
+
+	NetworkDebugWidget->AddToViewport();
+
+	SkillCooldownText = Cast<UTextBlock>(NetworkDebugWidget->GetWidgetFromName(TEXT("SkillCooldownText")));
+	SkillCooldownBar = Cast<UProgressBar>(NetworkDebugWidget->GetWidgetFromName(TEXT("SkillCooldownBar")));
+}
+
+void AMPPlayerController::CreateCombatHUD()
+{
+	if (!IsLocalController() || IsValid(CombatHUDWidget) || !CombatHUDWidgetClass)
+	{
+		return;
+	}
+
+	CombatHUDWidget = CreateWidget<UMPCombatHUDWidget>(this, CombatHUDWidgetClass);
+
+	if (!IsValid(CombatHUDWidget))
+	{
+		return;
+	}
+
+	CombatHUDWidget->AddToPlayerScreen(0);
+
 	if (IsLocalController() && NetworkDebugWidgetClass)
 	{
 		NetworkDebugWidget = CreateWidget<UMPNetworkDebugWidget>(this, NetworkDebugWidgetClass);
@@ -66,16 +111,43 @@ void AMPPlayerController::BeginPlay()
 			SkillCooldownBar = Cast<UProgressBar>(NetworkDebugWidget->GetWidgetFromName(TEXT("SkillCooldownBar")));
 		}
 	}
-
-	TryBindPlayerStateEvents();
 }
 
 void AMPPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	UnbindPlayerStateEvents();
 	UnbindHealthComponent();
 	UnbindSkillComponent();
 
+	RemoveNetworkDebugWidget();
+	RemoveCombatHUD();
+
 	Super::EndPlay(EndPlayReason);
+}
+
+void AMPPlayerController::RemoveNetworkDebugWidget()
+{
+	SkillCooldownText.Reset();
+	SkillCooldownBar.Reset();
+
+	if (!IsValid(NetworkDebugWidget))
+	{
+		return;
+	}
+
+	NetworkDebugWidget->RemoveFromParent();
+	NetworkDebugWidget = nullptr;
+}
+
+void AMPPlayerController::RemoveCombatHUD()
+{
+	if (!IsValid(CombatHUDWidget))
+	{
+		return;
+	}
+
+	CombatHUDWidget->RemoveFromParent();
+	CombatHUDWidget = nullptr;
 }
 
 void AMPPlayerController::OnPossess(APawn* InPawn)
@@ -146,6 +218,17 @@ void AMPPlayerController::TryBindPlayerStateEvents()
 	// 초기 동기화.
 	// 이미 복제된 값이 있는 상태에서 바인딩될 수 있으므로 현재 값을 한 번 직접 반영한다.
 	HandlePlayerDisplayNameChanged(CachedMPPlayerState->GetPlayerDisplayName());
+}
+
+void AMPPlayerController::UnbindPlayerStateEvents()
+{
+	if (!CachedMPPlayerState)
+	{
+		return;
+	}
+
+	CachedMPPlayerState->OnPlayerDisplayNameChanged.RemoveDynamic(this, &AMPPlayerController::HandlePlayerDisplayNameChanged);
+	CachedMPPlayerState = nullptr;
 }
 
 void AMPPlayerController::HandlePlayerDisplayNameChanged(const FString& NewDisplayName)
@@ -234,19 +317,19 @@ void AMPPlayerController::ApplyDamageToControlledPawn(float DamageAmount)
 
 void AMPPlayerController::HandleHealthChanged(float CurrentHP, float MaxHP)
 {
-	UE_LOG(LogTemp, Log, TEXT("PlayerController Health Changed: %.1f / %.1f"), CurrentHP, MaxHP);
+	UE_LOG(LogTemp, Log, TEXT("[CombatHUD] Health Changed Controller=%s HP=%.1f/%.1f"), *GetNameSafe(this), CurrentHP, MaxHP);
 
-	UpdateHealthDebugUI(CurrentHP, MaxHP);
+	UpdateCombatHUDHealth(CurrentHP, MaxHP);
 }
 
-void AMPPlayerController::UpdateHealthDebugUI(float CurrentHP, float MaxHP)
+void AMPPlayerController::UpdateCombatHUDHealth(float CurrentHP, float MaxHP)
 {
-	if (!NetworkDebugWidget)
+	if (!IsValid(CombatHUDWidget))
 	{
 		return;
 	}
 
-	NetworkDebugWidget->SetHealth(CurrentHP, MaxHP);
+	CombatHUDWidget->UpdateHealth(CurrentHP, MaxHP);
 }
 
 void AMPPlayerController::TestHeal(float HealAmount)

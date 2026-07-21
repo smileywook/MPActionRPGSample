@@ -18,6 +18,7 @@ public class MPActionRPGSample : ModuleRules
 			"InputCore", 
 			"EnhancedInput",
 			"UMG",
+            "CommonUI",
             "AIModule"
         });
 

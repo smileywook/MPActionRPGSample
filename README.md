@@ -566,3 +566,19 @@ HandleChanged
 - Target 탐색, 이동, 공격, Monster 피격과 사망 흐름의 전체 테스트를 완료했다.
 - 기존 Player 이동, 기본 공격, Ground Slash, Skill 쿨다운, 사망 및 리스폰 기능의 회귀 테스트를 완료했다.
 - 7주차 Monster AI 구현과 README 정리를 완료했다.
+
+### Week 8 Day 1 — CommonUI 기반 Combat HUD와 Player HP 이전
+
+- Common UI Plugin을 활성화하고 CommonGameViewportClient 기반의 CommonUI 입력 라우팅 설정을 적용했다.
+- UCommonUserWidget 기반 UMPCombatHUDWidget과 WBP_CombatHUD를 추가했다.
+- Combat HUD에 Player CurrentHP / MaxHP Text와 HealthBar를 구성했다.
+- 로컬 PlayerController가 Combat HUD를 생성하고 소유하도록 구성했다.
+- Combat HUD와 WBP_NetworkDebug의 생성 책임을 각각 CreateCombatHUD와 CreateNetworkDebugWidget으로 분리했다.
+- 기존 HealthComponent의 OnHealthChanged Delegate 바인딩을 재사용해 Combat HUD의 HP 표시를 갱신했다.
+- BeginPlay에서 HealthComponent 바인딩을 다시 시도해 HUD 생성과 Pawn Possess 순서가 달라도 현재 HP가 즉시 반영되도록 처리했다.
+- Listen Server는 OnPossess, Client는 OnRep_Pawn 경로를 통해 자신의 Pawn HealthComponent에 바인딩되는 기존 구조를 유지했다.
+- 동일한 HealthComponent가 이미 바인딩된 경우 Delegate를 중복 등록하지 않고 현재 HP만 다시 반영하도록 구성했다.
+- 사망 시 Combat HUD가 HP 0과 빈 HealthBar를 표시하고, Respawn 이후 MaxHP 상태로 복구되는 것을 확인했다.
+- 다른 Player의 HP 변경이 자신의 로컬 Combat HUD에 반영되지 않는 것을 확인했다.
+- WBP_NetworkDebug에서는 Player HP 표시 책임을 제거하고 네트워크 상태 확인 기능은 유지했다.
+- 기존 기본 공격, Ground Slash, Monster AI, 사망 및 Respawn 기능의 회귀 테스트를 완료했다.
